@@ -69,7 +69,11 @@ export const getStoredImage = (deckType: DeckType, cardId: number, cardName?: st
 // --- API KEY HELPER ---
 const getApiKey = () => {
   const key = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY || process.env.GEMINI_API_KEY || '';
-  if (!key) console.warn("[Gemini] API Key is empty! Check your environment variables.");
+  if (!key) {
+    console.error("[Gemini] API Key is MISSING! Check Cloudflare environment variables.");
+  } else {
+    console.log(`[Gemini] API Key found (len: ${key.length}): ${key.substring(0, 4)}...${key.substring(key.length - 4)}`);
+  }
   return key;
 };
 
@@ -77,7 +81,7 @@ export const analyzeIntent = async (question: string): Promise<{ category: Inten
   const ai = new GoogleGenAI({ apiKey: getApiKey() });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash',
+      model: 'gemini-3-flash', // Changed model to gemini-3-flash
       contents: [{ parts: [{ text: `Classify the intent of this query into one of these categories: Love, Career, Health, Spiritual, General. Query: "${question}"` }] }],
       config: {
         responseMimeType: 'application/json',
@@ -90,12 +94,15 @@ export const analyzeIntent = async (question: string): Promise<{ category: Inten
         }
       }
     });
-    const text = response.text || "{}";
-    const result = JSON.parse(text);
-    return { category: Object.values(IntentCategory).includes(result.category as IntentCategory) ? result.category as IntentCategory : IntentCategory.GENERAL };
+    const result = JSON.parse(response.text || "{}");
+    if (!result.category) {
+      console.warn("[Gemini] analyzeIntent did not return a category. Defaulting to General.");
+      return { category: IntentCategory.GENERAL };
+    }
+    return result;
   } catch (error) {
-    console.error("[Gemini] Intent Analysis Error:", error);
-    return { category: IntentCategory.GENERAL };
+    console.error("[Gemini] Intent Analysis Failed:", error);
+    return { category: IntentCategory.GENERAL }; // Fallback to General
   }
 };
 
@@ -139,7 +146,7 @@ export const generateCardImage = async (cardId: number, cardName: string, deckTy
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash',
+      model: 'gemini-3-flash', // Changed model to gemini-3-flash
       contents: [{ parts: [{ text: prompt }] }],
       config: {
         // @ts-ignore
@@ -202,7 +209,7 @@ export const generateReading = async (
   console.log("[Gemini] Generating reading with prompt length:", prompt.length);
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash',
+      model: 'gemini-3-flash', // Changed model to gemini-3-flash
       contents: [{ parts: [{ text: prompt }] }],
       config: {
         responseMimeType: 'application/json',
@@ -225,9 +232,14 @@ export const generateReading = async (
     return JSON.parse(response.text || "{}");
   } catch (error) {
     console.error("[Gemini] Reading Generation Failed:", error);
-    // Log helpful context
+    // Log full error details for live site debugging
     if (error instanceof Error) {
-      console.error("Message:", error.message);
+      console.error("Error Message:", error.message);
+      // @ts-ignore
+      if (error.status) console.error("HTTP Status:", error.status);
+      // @ts-ignore
+      if (error.error) console.error("API Error Payload:", error.error);
+
       if (error.message.includes("404") || error.message.includes("not found")) {
         console.warn("TIP: The model 'gemini-3-flash' might not be available or name is incorrect.");
       }

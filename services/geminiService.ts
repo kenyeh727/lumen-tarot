@@ -68,7 +68,9 @@ export const getStoredImage = (deckType: DeckType, cardId: number, cardName?: st
 
 // --- API KEY HELPER ---
 const getApiKey = () => {
-  return import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY || process.env.GEMINI_API_KEY || '';
+  const key = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY || process.env.GEMINI_API_KEY || '';
+  if (!key) console.warn("[Gemini] API Key is empty! Check your environment variables.");
+  return key;
 };
 
 export const analyzeIntent = async (question: string): Promise<{ category: IntentCategory }> => {
@@ -76,7 +78,7 @@ export const analyzeIntent = async (question: string): Promise<{ category: Inten
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Classify the intent of this query into one of these categories: Love, Career, Health, Spiritual, General. Query: "${question}"`,
+      contents: [{ parts: [{ text: `Classify the intent of this query into one of these categories: Love, Career, Health, Spiritual, General. Query: "${question}"` }] }],
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
@@ -92,6 +94,7 @@ export const analyzeIntent = async (question: string): Promise<{ category: Inten
     const result = JSON.parse(text);
     return { category: Object.values(IntentCategory).includes(result.category as IntentCategory) ? result.category as IntentCategory : IntentCategory.GENERAL };
   } catch (error) {
+    console.error("[Gemini] Intent Analysis Error:", error);
     return { category: IntentCategory.GENERAL };
   }
 };
@@ -135,7 +138,7 @@ export const generateCardImage = async (cardId: number, cardName: string, deckTy
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: { parts: [{ text: prompt }] },
+      contents: [{ parts: [{ text: prompt }] }],
       config: {
         // @ts-ignore
         responseModalities: ["IMAGE"],
@@ -193,10 +196,11 @@ export const generateReading = async (
     Provide a detailed analysis in JSON format.
   `;
 
+  console.log("[Gemini] Generating reading with prompt length:", prompt.length);
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: prompt,
+      contents: [{ parts: [{ text: prompt }] }],
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
@@ -217,15 +221,24 @@ export const generateReading = async (
     });
     return JSON.parse(response.text || "{}");
   } catch (error) {
+    console.error("[Gemini] Reading Generation Failed:", error);
+    // Log helpful context
+    if (error instanceof Error) {
+      console.error("Message:", error.message);
+      if (error.message.includes("404") || error.message.includes("not found")) {
+        console.warn("TIP: The model 'gemini-3-flash-preview' might not be available or name is incorrect.");
+      }
+    }
+
     return {
-      summary: "The stars are veiled.",
-      keywords: ["Patience", "Inner Peace", "Waiting"],
-      analysis: "The cosmos is currently recalibrating. Trust in the timing of your life.",
-      advice: "Take a moment for quiet reflection.",
-      affirmation: "I am open to the guidance of the universe.",
-      luckyColor: "Soft Indigo",
-      luckyNumber: "11",
-      flavorText: "Silence is also an answer."
+      summary: "星空暫時被雲層遮蔽了",
+      keywords: ["等待", "耐心", "平靜"],
+      analysis: "宇宙能量正在重新排列，請稍後再試。這通常是因為 API Key 設定不正確，或是指定的模型名稱（gemini-3-flash-preview）無法在此區域使用。請檢查開發人員主控台 (F12) 的錯誤訊息。",
+      advice: "深呼吸，感受當下的寧靜。",
+      affirmation: "我信任宇宙的安排。",
+      luckyColor: "星空藍",
+      luckyNumber: "7",
+      flavorText: "沈默也是一種回應，模型或許還未準備好。"
     };
   }
 };

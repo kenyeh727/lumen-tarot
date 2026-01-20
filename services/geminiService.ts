@@ -229,14 +229,14 @@ export const generateReading = async (
     if (error instanceof Error) {
       console.error("Message:", error.message);
       if (error.message.includes("404") || error.message.includes("not found")) {
-        console.warn("TIP: The model 'gemini-3-flash-preview' might not be available or name is incorrect.");
+        console.warn("TIP: The model 'gemini-3-flash' might not be available or name is incorrect.");
       }
     }
 
     return {
       summary: "星空暫時被雲層遮蔽了",
       keywords: ["等待", "耐心", "平靜"],
-      analysis: "宇宙能量正在重新排列，請稍後再試。這通常是因為 API Key 設定不正確，或是指定的模型名稱（gemini-3-flash-preview）無法在此區域使用。請檢查開發人員主控台 (F12) 的錯誤訊息。",
+      analysis: "宇宙能量正在重新排列，請稍後再試。這通常是因為 API Key 設定不正確，或是指定的模型名稱（gemini-3-flash）無法在此區域使用。請檢查開發人員主控台 (F12) 的錯誤訊息。",
       advice: "深呼吸，感受當下的寧靜。",
       affirmation: "我信任宇宙的安排。",
       luckyColor: "星空藍",

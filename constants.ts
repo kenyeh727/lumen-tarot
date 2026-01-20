@@ -2,7 +2,7 @@
 import { TarotCard, Language, DeckType, DeckConfig } from './types';
 
 // Updated Card Back: Minimalist, Matte Dark, Gold Line Art
-export const CARD_BACK_PATTERN = "https://www.transparenttextures.com/patterns/stardust.png"; 
+export const CARD_BACK_PATTERN = "https://www.transparenttextures.com/patterns/stardust.png";
 
 export const DECK_CONFIGS: Record<DeckType, DeckConfig> = {
   [DeckType.TAROT]: {
@@ -10,12 +10,12 @@ export const DECK_CONFIGS: Record<DeckType, DeckConfig> = {
     label: { [Language.EN]: "THE TAROT", [Language.ZH_TW]: "命運塔羅" },
     tagline: { [Language.EN]: "The Golden Path of Soul.", [Language.ZH_TW]: "靈魂的金線軌跡。" },
     description: { [Language.EN]: "Classic wisdom with a minimalist, high-frequency aesthetic.", [Language.ZH_TW]: "極簡高頻美學，連結深層智慧。" },
-    themeColor: "text-amber-400", 
+    themeColor: "text-amber-400",
     bgGradient: "from-[#0a0a12] via-[#1a1a2e] to-[#0a0a12]", // Deep Indigo/Black
-    cardBackImage: "https://www.transparenttextures.com/patterns/stardust.png", 
+    cardBackImage: "https://www.transparenttextures.com/patterns/stardust.png",
     promptStyle: {
       prefix: "Tarot card illustration of ",
-      suffix: ", modern digital vector art, bold uniform black outlines (ligne claire), flat coloring, minimal cel-shading, no gradients, muted deep color palette (dark blues, teals, muted purples, antique gold, greys), melancholic and mysterious mood, enclosed in an ornate flat gold art nouveau inspired border frame, high quality, 8k resolution."
+      suffix: ", the card name is elegantly written at the bottom center of the card, modern digital vector art, bold uniform black outlines (ligne claire), flat coloring, minimal cel-shading, no gradients, muted deep color palette (dark blues, teals, muted purples, antique gold, greys), melancholic and mysterious mood, enclosed in an ornate flat gold art nouveau inspired border frame, high quality, 8k resolution."
     }
   },
   [DeckType.LENORMAND]: {
@@ -23,12 +23,12 @@ export const DECK_CONFIGS: Record<DeckType, DeckConfig> = {
     label: { [Language.EN]: "LENORMAND", [Language.ZH_TW]: "雷諾曼預言" },
     tagline: { [Language.EN]: "Vibrant tales of daily life.", [Language.ZH_TW]: "繪聲繪影的日常預言。" },
     description: { [Language.EN]: "School anime-style illustrations for direct intuition.", [Language.ZH_TW]: "校園動漫風格，直覺連結生活。" },
-    themeColor: "text-rose-400", 
-    bgGradient: "from-rose-950 via-slate-900 to-indigo-950", 
+    themeColor: "text-rose-400",
+    bgGradient: "from-rose-950 via-slate-900 to-indigo-950",
     cardBackImage: "https://www.transparenttextures.com/patterns/graphy.png",
     promptStyle: {
-      prefix: "Lenormand card illustration [CARD_NAME], ",
-      suffix: ", school anime style, vibrant, high school setting, shoujo manga aesthetic, cel-shaded, bright colors, detailed background, high quality, masterpiece."
+      prefix: "Lenormand card illustration of ",
+      suffix: ", school anime style (shoujo manga aesthetic), vibrant pastel colors, high school setting, cel-shaded with clean linework, bright cheerful atmosphere, detailed background, enclosed in a decorative pink and white art nouveau inspired border frame with floral accents, consistent card layout, high quality digital art, masterpiece, 2:3 aspect ratio."
     }
   }
 };

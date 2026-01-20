@@ -142,7 +142,12 @@ async function generateExact(cardId: any, cardName: string, deckType: DeckType) 
     const filename = `${deckType}_${sanitizeFilename(cardName)}.png`;
     const filepath = path.join(OUTPUT_DIR, filename);
 
-    console.log(`[START] ${filename} (FORCE REGENerate)`);
+    if (fs.existsSync(filepath)) {
+        console.log(`[SKIP] ${filename} already exists.`);
+        return;
+    }
+
+    console.log(`[START] ${filename} (REGENerate if missing)`);
 
     let retryCount = 0;
     const maxRetries = 5;
@@ -167,7 +172,7 @@ async function generateExact(cardId: any, cardName: string, deckType: DeckType) 
                 config: {
                     responseModalities: ["IMAGE"],
                     imageConfig: {
-                        aspectRatio: "9:16"
+                        aspectRatio: "2:3"
                     }
                 }
             });
@@ -210,11 +215,15 @@ async function generateExact(cardId: any, cardName: string, deckType: DeckType) 
 async function main() {
     console.log(`Docs: ${FULL_DECK.length} Tarot, ${LENORMAND_DECK.length} Lenormand`);
 
+    // Iterate Tarot
+    for (const card of FULL_DECK) {
+        await generateExact(card.id, card.name, DeckType.TAROT);
+        // Rate limiting - wait 2 seconds between generations
+        await new Promise(r => setTimeout(r, 2000));
+    }
+
     // Iterate Lenormand
     for (const card of LENORMAND_DECK) {
-        // Force regeneration by NOT checking existence if we want total refresh, 
-        // OR we can just delete the files first.
-        // For individual card generation logic in generateExact, I'll modify it to overwrite.
         await generateExact(card.id, card.name, DeckType.LENORMAND);
         // Rate limiting - wait 2 seconds between generations
         await new Promise(r => setTimeout(r, 2000));

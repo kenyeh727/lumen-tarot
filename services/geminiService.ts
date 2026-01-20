@@ -134,7 +134,7 @@ export const generateCardImage = async (cardId: number, cardName: string, deckTy
         // @ts-ignore
         responseModalities: ["IMAGE"],
         imageConfig: {
-          aspectRatio: "9:16"
+          aspectRatio: "2:3"
         }
       }
     });

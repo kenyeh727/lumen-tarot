@@ -74,6 +74,8 @@ const App: React.FC = () => {
   const handleDeckSelect = (selectedMode: DeckType) => {
     setDeckType(selectedMode);
     setStage(AppStage.INQUIRY);
+    setSelectedCards([]);
+    setReading(null);
     if (selectedMode === DeckType.LENORMAND) setTargetCardCount(3);
     else setTargetCardCount(1);
   };
@@ -83,6 +85,8 @@ const App: React.FC = () => {
     if (!question.trim() || isProcessing) return;
     setIsProcessing(true);
     playSound('select');
+    setSelectedCards([]);
+    setReading(null);
     // Move to Shuffling Phase
     setStage(AppStage.SHUFFLING);
 

@@ -77,7 +77,7 @@ export const analyzeIntent = async (question: string): Promise<{ category: Inten
   const ai = new GoogleGenAI({ apiKey: getApiKey() });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-flash',
       contents: [{ parts: [{ text: `Classify the intent of this query into one of these categories: Love, Career, Health, Spiritual, General. Query: "${question}"` }] }],
       config: {
         responseMimeType: 'application/json',
@@ -139,7 +139,7 @@ export const generateCardImage = async (cardId: number, cardName: string, deckTy
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-flash',
       contents: [{ parts: [{ text: prompt }] }],
       config: {
         // @ts-ignore
@@ -202,7 +202,7 @@ export const generateReading = async (
   console.log("[Gemini] Generating reading with prompt length:", prompt.length);
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-flash',
       contents: [{ parts: [{ text: prompt }] }],
       config: {
         responseMimeType: 'application/json',

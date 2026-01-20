@@ -211,7 +211,10 @@ const App: React.FC = () => {
 
       } catch (error) {
         console.error("Critical Oracle Error:", error);
-        setStage(AppStage.INQUIRY);
+        // On live site, if generateReading fails, we stay in REVEALING briefly 
+        // but the fallback reading will eventually be set by generateReading's own catch block.
+        // If it throws even with fallback, we at least don't reset the whole session.
+        setStage(AppStage.READING);
       }
     }
   };

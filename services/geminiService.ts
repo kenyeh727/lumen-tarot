@@ -1,4 +1,5 @@
 
+/// <reference types="vite/client" />
 import { GoogleGenAI, Type } from "@google/genai";
 import { IntentCategory, SpreadType, SelectedCardData, Language, DeckType, ReadingResult } from "../types";
 import { DECK_CONFIGS } from "../constants";
@@ -65,8 +66,13 @@ export const getStoredImage = (deckType: DeckType, cardId: number, cardName?: st
 
 // --- API FUNCTIONS ---
 
+// --- API KEY HELPER ---
+const getApiKey = () => {
+  return import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY || process.env.GEMINI_API_KEY || '';
+};
+
 export const analyzeIntent = async (question: string): Promise<{ category: IntentCategory }> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: getApiKey() });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -120,7 +126,7 @@ export const generateCardImage = async (cardId: number, cardName: string, deckTy
   console.log(`[Asset Map] No image found for ${deckType} #${cardId}. Generating new asset...`);
 
   // 3. Generate New Asset
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: getApiKey() });
   const config = DECK_CONFIGS[deckType];
 
   // Construct precise prompt for consistent style
@@ -128,7 +134,7 @@ export const generateCardImage = async (cardId: number, cardName: string, deckTy
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image', // Or 'imagen-3.0-generate-001' if available
+      model: 'gemini-3-flash-preview',
       contents: { parts: [{ text: prompt }] },
       config: {
         // @ts-ignore
@@ -152,6 +158,7 @@ export const generateCardImage = async (cardId: number, cardName: string, deckTy
     return null;
   } catch (error) {
     console.error("Asset Generation Failed:", error);
+    // On live site, return null so UI shows loader/placeholder but doesn't crash
     return null;
   }
 };
@@ -164,7 +171,7 @@ export const generateReading = async (
   deckType: DeckType,
   language: Language
 ): Promise<ReadingResult> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: getApiKey() });
   const cardDetails = selectedCards.map(c => `- [${c.position}]: ${c.card.name} (${deckType === DeckType.TAROT && c.isReversed ? 'Reversed' : 'Upright'})`).join('\n');
 
   const langReq = language === Language.ZH_TW
@@ -188,7 +195,7 @@ export const generateReading = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',

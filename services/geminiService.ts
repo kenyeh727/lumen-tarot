@@ -126,9 +126,11 @@ export const generateCardImage = async (cardId: number, cardName: string, deckTy
     return existingAsset;
   }
 
-  console.log(`[Asset Map] No image found for ${deckType} #${cardId}. Generating new asset...`);
+  console.log(`[Asset Map] No image found for ${deckType} #${cardId}. AI Generation is disabled.`);
+  return null;
 
-  // 3. Generate New Asset
+  // 3. Generate New Asset (DISABLED)
+  /*
   const ai = new GoogleGenAI({ apiKey: getApiKey() });
   const config = DECK_CONFIGS[deckType];
 
@@ -164,6 +166,7 @@ export const generateCardImage = async (cardId: number, cardName: string, deckTy
     // On live site, return null so UI shows loader/placeholder but doesn't crash
     return null;
   }
+  */
 };
 
 export const generateReading = async (

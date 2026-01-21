@@ -1,20 +1,67 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Lumen Tarot 🔮
 
-# Run and deploy your AI Studio app
+A modern, high-aesthetic Tarot and Lenormand reading web application built with React, Vite, and Gemini AI.
 
-This contains everything you need to run your app locally.
+## ✨ Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/1WhGOzYcrDG4DPKBR5HiJNobiC_DiJfsm
+- **Tarot & Lenormand Decks**: Choose your preferred divination tool.
+- **AI-Powered Readings**: Integrated with Gemini AI for deep intent analysis and interpretation.
+- **Dynamic Artwork**: AI-generated card imagery based on your reading.
+- **Modern UI**: Full-screen immersive experience with glassmorphism and smooth animations.
+- **Shareable Results**: Capture and share your destiny with beautiful generated layouts.
 
-## Run Locally
+## 🛠️ Tech Stack
 
-**Prerequisites:**  Node.js
+- **Framework**: React 19
+- **Bundler**: Vite 6
+- **Styling**: Tailwind CSS (CDN) + Custom Vanilla CSS
+- **Animation**: Framer Motion
+- **Icons**: Lucide React
+- **AI**: Google Generative AI (Gemini)
 
+## 🚀 Getting Started
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Prerequisites
+
+- Node.js (Latest LTS recommended)
+- Gemini API Key
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up environment variables:
+   Create a `.env` file in the root directory:
+   ```env
+   GEMINI_API_KEY=your_api_key_here
+   ```
+
+### Development
+
+Run the development server:
+```bash
+npm run dev
+```
+The app will be available at `http://localhost:3000`.
+
+### Build
+
+Build for production:
+```bash
+npm run build
+```
+
+## 📂 Project Structure
+
+- `App.tsx`: Main application container and stage management.
+- `components/`: Reusable UI components (StarField, DeckSelector, etc.).
+- `services/`: Backend services (Gemini API integration).
+- `constants.ts`: Deck data and translations.
+- `types.ts`: TypeScript definitions.
+
+## 📜 License
+
+MIT

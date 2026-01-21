@@ -81,7 +81,7 @@ export const analyzeIntent = async (question: string): Promise<{ category: Inten
   const ai = new GoogleGenAI({ apiKey: getApiKey() });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash', // Changed model to gemini-3-flash
+      model: 'gemini-2.5-flash-lite',
       contents: [{ parts: [{ text: `Classify the intent of this query into one of these categories: Love, Career, Health, Spiritual, General. Query: "${question}"` }] }],
       config: {
         responseMimeType: 'application/json',
@@ -146,7 +146,7 @@ export const generateCardImage = async (cardId: number, cardName: string, deckTy
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash', // Changed model to gemini-3-flash
+      model: 'gemini-2.5-flash-lite',
       contents: [{ parts: [{ text: prompt }] }],
       config: {
         // @ts-ignore
@@ -209,7 +209,7 @@ export const generateReading = async (
   console.log("[Gemini] Generating reading with prompt length:", prompt.length);
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash', // Changed model to gemini-3-flash
+      model: 'gemini-2.5-flash-lite',
       contents: [{ parts: [{ text: prompt }] }],
       config: {
         responseMimeType: 'application/json',
@@ -248,7 +248,7 @@ export const generateReading = async (
     return {
       summary: "星空暫時被雲層遮蔽了",
       keywords: ["等待", "耐心", "平靜"],
-      analysis: "宇宙能量正在重新排列，請稍後再試。這通常是因為 API Key 設定不正確，或是指定的模型名稱（gemini-3-flash）無法在此區域使用。請檢查開發人員主控台 (F12) 的錯誤訊息。",
+      analysis: "宇宙能量正在重新排列，請稍後再試。這通常是因為 API Key 設定不正確，或是指定的模型名稱（gemini-1.5-flash）無法在此區域使用。請檢查開發人員主控台 (F12) 的錯誤訊息。",
       advice: "深呼吸，感受當下的寧靜。",
       affirmation: "我信任宇宙的安排。",
       luckyColor: "星空藍",

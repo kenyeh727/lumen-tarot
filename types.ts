@@ -1,5 +1,6 @@
 
 export enum AppStage {
+  LOGIN = 'LOGIN',
   LOBBY = 'LOBBY',
   INQUIRY = 'INQUIRY',
   SHUFFLING = 'SHUFFLING',
@@ -20,9 +21,9 @@ export enum IntentCategory {
 }
 
 export enum SpreadType {
-  ONE_CARD = 'ONE_CARD',         
-  TWO_CARD = 'TWO_CARD',         
-  THREE_CARD = 'THREE_CARD'      
+  ONE_CARD = 'ONE_CARD',
+  TWO_CARD = 'TWO_CARD',
+  THREE_CARD = 'THREE_CARD'
 }
 
 export enum DeckType {
@@ -49,9 +50,9 @@ export interface TarotCard {
   id: number;
   name: string; // Internal/Display name handled via localization in component usually, but we keep this for ID
   name_i18n: BilingualText;
-  image?: string; 
+  image?: string;
   desc: BilingualText;
-  keywords: BilingualArray; 
+  keywords: BilingualArray;
   meaningUpright: BilingualText;
   meaningReversed: BilingualText; // For Lenormand, this can be "Negative Context"
 }
@@ -74,7 +75,7 @@ export interface SelectedCardData {
   card: TarotCard;
   isReversed: boolean;
   position: 'Single' | 'Past' | 'Present' | 'Future' | 'Situation' | 'Challenge';
-  generatedImageUrl?: string; 
+  generatedImageUrl?: string;
 }
 
 export interface ReadingResult {
@@ -85,7 +86,7 @@ export interface ReadingResult {
   affirmation: string;
   luckyColor: string;
   luckyNumber: string;
-  flavorText: string; 
+  flavorText: string;
 }
 
 export interface HistoryEntry {

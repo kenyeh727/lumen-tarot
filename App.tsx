@@ -11,14 +11,20 @@ import TarotRitual from './components/TarotRitual';
 import FanSpread from './components/FanSpread';
 import CutDeck from './components/CutDeck';
 import ShareCard from './components/ShareCard';
+import LoginPage from './components/LoginPage';
+import UsageLimitBanner from './components/UsageLimitBanner';
+import UserMenu from './components/UserMenu';
 import { AppStage, IntentCategory, SpreadType, TarotCard, SelectedCardData, Language, DeckType, ReadingResult, HistoryEntry } from './types';
 import { FULL_DECK, LENORMAND_DECK, TRANSLATIONS, DECK_CONFIGS } from './constants';
 import { analyzeIntent, generateReading, generateCardImage, getStoredImage } from './services/geminiService';
+import { checkUsageLimit, incrementUsageCount } from './services/authService';
+import { useAuth } from './contexts/AuthContext';
 import { playSound } from './utils/sound';
 // @ts-ignore
 import html2canvas from 'html2canvas';
 
 const App: React.FC = () => {
+  const { user, profile, loading, refreshProfile } = useAuth();
   const [language, setLanguage] = useState<Language>(Language.ZH_TW);
   const [stage, setStage] = useState<AppStage>(AppStage.LOBBY);
   const [question, setQuestion] = useState('');
@@ -83,6 +89,19 @@ const App: React.FC = () => {
   const handleInquirySubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!question.trim() || isProcessing) return;
+
+    // Check usage limit before proceeding
+    if (!user) {
+      alert(language === Language.ZH_TW ? '請先登入' : 'Please sign in first');
+      return;
+    }
+
+    const { canUse, remaining } = await checkUsageLimit(user.id);
+    if (!canUse) {
+      alert(language === Language.ZH_TW ? '您的占卜額度已用完' : 'Your reading quota has been exhausted');
+      return;
+    }
+
     setIsProcessing(true);
     playSound('select');
     setSelectedCards([]);
@@ -181,6 +200,17 @@ const App: React.FC = () => {
       try {
         const result = await generateReading(question, updatedSelections, intent, spreadType, deckType, language);
         setReading(result);
+
+        // Increment usage count after successful reading generation
+        if (user) {
+          try {
+            await incrementUsageCount(user.id);
+            // Refresh profile to update UI
+            await refreshProfile();
+          } catch (error) {
+            console.error('Failed to increment usage count:', error);
+          }
+        }
 
         updatedSelections.forEach(async (sel, idx) => {
           if (sel.generatedImageUrl) return;
@@ -453,6 +483,8 @@ const App: React.FC = () => {
             <History size={14} className="group-hover:rotate-12 transition-transform" />
             <span className="hidden md:inline">{language === Language.ZH_TW ? '紀錄' : 'HISTORY'}</span>
           </button>
+
+          {user && <UserMenu language={language} />}
         </div>
       </div>
 
@@ -501,20 +533,27 @@ const App: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="relative z-20 w-full h-full flex flex-col">
-        {stage === AppStage.LIBRARY && (
+        {!user && !loading && (
+          <LoginPage language={language} />
+        )}
+
+        {user && stage === AppStage.LIBRARY && (
           <CardLibrary language={language} onBack={() => setStage(AppStage.LOBBY)} />
         )}
 
-        {stage === AppStage.LOBBY && (
+        {user && stage === AppStage.LOBBY && (
           <DeckSelector language={language} onSelect={handleDeckSelect} />
         )}
 
-        {stage === AppStage.INQUIRY && (
+        {user && stage === AppStage.INQUIRY && (
           <div className="w-full h-full overflow-y-auto no-scrollbar z-20">
             <div className="min-h-full flex flex-col items-center justify-center p-6 pt-24 pb-safe animate-in fade-in zoom-in duration-500">
               <div className="relative z-10 animate-bounce mb-[-10px]">
                 <img src="https://cdn-icons-png.flaticon.com/512/4392/4392520.png" alt="Mascot" className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-[0_0_30px_rgba(103,81,246,0.6)]" />
               </div>
+
+              <UsageLimitBanner language={language} />
+
               <div className="glass-panel p-8 md:p-12 text-center max-w-xl w-full relative z-0 mt-4 rounded-[40px] border border-white/20 shadow-glass">
                 <h1 className="text-3xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-2 font-bold tracking-tight drop-shadow-sm font-serif">{activeConfig.label[language]}</h1>
                 <p className="text-gray-400 text-[10px] tracking-[0.3em] uppercase mb-10 font-bold">{activeConfig.tagline[language]}</p>
@@ -539,14 +578,14 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <button type="submit" disabled={!question.trim()} className="w-full py-5 btn-primary rounded-full text-sm tracking-[0.2em] uppercase font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-1">{t.start}</button>
+                  <button type="submit" disabled={!question.trim() || (profile && profile.usage_count >= 10)} className="w-full py-5 btn-primary rounded-full text-sm tracking-[0.2em] uppercase font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-1">{t.start}</button>
                 </form>
               </div>
             </div>
           </div>
         )}
 
-        {stage === AppStage.SHUFFLING && (
+        {user && stage === AppStage.SHUFFLING && (
           <TarotRitual
             stage={stage}
             deckType={deckType}
@@ -554,16 +593,16 @@ const App: React.FC = () => {
           />
         )}
 
-        {stage === AppStage.CUTTING && (
+        {user && stage === AppStage.CUTTING && (
           <CutDeck
             config={activeConfig}
             onComplete={() => setStage(AppStage.DRAWING)}
           />
         )}
 
-        {stage === AppStage.DRAWING && renderSelectionStage()}
+        {user && stage === AppStage.DRAWING && renderSelectionStage()}
 
-        {stage === AppStage.REVEALING && (
+        {user && stage === AppStage.REVEALING && (
           <div className="w-full h-full overflow-y-auto no-scrollbar">
             <div className="min-h-full flex flex-col items-center justify-center px-6 text-center pt-24 pb-12">
               <div className="min-h-[120px] max-w-2xl glass-panel p-10 flex items-center justify-center mb-8 rounded-[40px] border border-white/10 shadow-glass">
@@ -574,7 +613,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {stage === AppStage.READING && renderReadingStage()}
+        {user && stage === AppStage.READING && renderReadingStage()}
       </div>
 
       <style>{`

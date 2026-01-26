@@ -79,7 +79,7 @@ export const analyzeIntent = async (question: string): Promise<{ category: Inten
   const ai = new GoogleGenAI({ apiKey: getApiKey() });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash',
+      model: 'gemini-2.5-flash-lite',
       contents: [{ parts: [{ text: `Classify the intent of this query into one of these categories: Love, Career, Health, Spiritual, General. Query: "${question}"` }] }],
       config: {
         responseMimeType: 'application/json',
@@ -207,7 +207,7 @@ export const generateReading = async (
   console.log("[Gemini] Generating reading with prompt length:", prompt.length);
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash',
+      model: 'gemini-2.5-flash-lite',
       contents: [{ parts: [{ text: prompt }] }],
       config: {
         responseMimeType: 'application/json',
@@ -246,7 +246,7 @@ export const generateReading = async (
     return {
       summary: "星空暫時被雲層遮蔽了",
       keywords: ["等待", "耐心", "平靜"],
-      analysis: "宇宙能量正在重新排列，請稍後再試。這通常是因為 API Key 設定不正確，或是指定的模型名稱（gemini-3-flash）無法在此區域使用。請檢查開發人員主控台 (F12) 的錯誤訊息。",
+      analysis: "宇宙能量正在重新排列，請稍後再試。這通常是因為 API Key 設定不正確，或是指定的模型名稱（gemini-1.5-flash）無法在此區域使用。請檢查開發人員主控台 (F12) 的錯誤訊息。",
       advice: "深呼吸，感受當下的寧靜。",
       affirmation: "我信任宇宙的安排。",
       luckyColor: "星空藍",
@@ -254,4 +254,41 @@ export const generateReading = async (
       flavorText: "沈默也是一種回應，模型或許還未準備好。"
     };
   }
+};
+
+export const generateCardAnalysis = async (
+    cardName: string,
+    deckType: DeckType,
+    language: Language
+): Promise<string> => {
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+
+    const langReq = language === Language.ZH_TW
+        ? "請使用繁體中文（台灣）。你是一位「星空狐狸」，語氣要溫柔、神秘且充滿智慧。"
+        : "Tone: Mystical, Wise, and Gentle. You are the 'Celestial Star Fox'.";
+
+    const prompt = `
+    Role: Celestial Star Fox (Tarot Guide)
+    Card: ${cardName}
+    Deck: ${DeckType[deckType]}
+    
+    Instruction: ${langReq}
+    Provide a deep, insightful interpretation of this card's essence. 
+    Focus on its symbolism, energy, and what message it whispers to the soul.
+    Length: At least 50 words.
+    Format: Plain text paragraph.
+  `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-lite',
+            contents: [{ parts: [{ text: prompt }] }]
+        });
+        return response.text || (language === Language.ZH_TW ? "星辰暫時沈默..." : "The stars are silent...");
+    } catch (error) {
+        console.error("Card Analysis Failed:", error);
+        return language === Language.ZH_TW
+            ? "目前無法連結到星空圖書館，請稍後再試。"
+            : "Unable to connect to the Celestial Library at this moment.";
+    }
 };

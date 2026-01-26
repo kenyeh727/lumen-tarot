@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { TarotCard, DeckType, Language } from '../types';
 import { FULL_DECK, LENORMAND_DECK, TRANSLATIONS, DECK_CONFIGS } from '../constants';
-import { getStoredImage, generateCardImage } from '../services/geminiService';
-import { Search, X, ChevronRight, BookOpen, ArrowLeft, Loader2, Image as ImageIcon, Sparkles, Shuffle } from 'lucide-react';
+import { getStoredImage, generateCardImage, generateCardAnalysis } from '../services/geminiService';
+import { Search, X, ChevronRight, BookOpen, ArrowLeft, Loader2, Image as ImageIcon, Sparkles, Shuffle, MessageSquareQuote } from 'lucide-react';
 import { playSound } from '../utils/sound';
 
 interface CardLibraryProps {
@@ -16,7 +16,9 @@ const CardLibrary: React.FC<CardLibraryProps> = ({ language, onBack }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCard, setSelectedCard] = useState<TarotCard | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [imageMap, setImageMap] = useState<Record<number, string | null>>({});
+  const [analysisMap, setAnalysisMap] = useState<Record<number, string | null>>({});
 
   // New state for shuffling
   const [displayedCards, setDisplayedCards] = useState<TarotCard[]>([]);
@@ -80,6 +82,19 @@ const CardLibrary: React.FC<CardLibraryProps> = ({ language, onBack }) => {
       setImageMap(prev => ({ ...prev, [selectedCard.id]: img }));
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (!selectedCard || isAnalyzing) return;
+    if (analysisMap[selectedCard.id]) return; // Already analyzed
+
+    setIsAnalyzing(true);
+    try {
+      const analysis = await generateCardAnalysis(selectedCard.name, activeDeck, language);
+      setAnalysisMap(prev => ({ ...prev, [selectedCard.id]: analysis }));
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -291,6 +306,38 @@ const CardLibrary: React.FC<CardLibraryProps> = ({ language, onBack }) => {
               </div>
 
               <div className="space-y-8">
+                {/* AI Analysis Section */}
+                <div className="bg-primary/5 p-6 rounded-2xl border border-primary/20 hover:border-primary/40 transition-colors">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-primary font-bold flex items-center gap-2 text-lg tracking-wide">
+                      <MessageSquareQuote size={18} />
+                      {language === Language.ZH_TW ? "深度解析" : "Deep Analysis"}
+                    </h3>
+                    {!analysisMap[selectedCard.id] && (
+                      <button
+                        onClick={handleAnalyze}
+                        disabled={isAnalyzing}
+                        className="bg-primary text-white px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-widest uppercase hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center gap-2"
+                      >
+                        {isAnalyzing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                        {language === Language.ZH_TW ? "狐狸解讀" : "ASK THE FOX"}
+                      </button>
+                    )}
+                  </div>
+
+                  {analysisMap[selectedCard.id] ? (
+                    <p className="text-gray-300 leading-loose font-medium text-sm whitespace-pre-wrap animate-in fade-in">
+                      {analysisMap[selectedCard.id]}
+                    </p>
+                  ) : (
+                    <p className="text-gray-500 italic text-sm">
+                      {language === Language.ZH_TW
+                        ? "邀請星空狐狸為您解讀這張牌的深層含義..."
+                        : "Invite the Star Fox to reveal the deeper meaning of this card..."}
+                    </p>
+                  )}
+                </div>
+
                 <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-primary/30 transition-colors">
                   <h3 className="text-white font-bold mb-4 flex items-center gap-2 text-lg tracking-wide">
                     <ChevronRight size={18} className="text-primary" />

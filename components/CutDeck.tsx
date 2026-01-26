@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { Scissors } from 'lucide-react';
 import { playSound } from '../utils/sound';
-import { DeckConfig } from '../types';
+import { DeckConfig, Language } from '../types';
 
 interface CutDeckProps {
     config: DeckConfig;
+    language: Language;
     onComplete: () => void;
 }
 
-const CutDeck: React.FC<CutDeckProps> = ({ config, onComplete }) => {
+const CutDeck: React.FC<CutDeckProps> = ({ config, language, onComplete }) => {
     const [isAnimating, setIsAnimating] = useState(false);
     const [hasCut, setHasCut] = useState(false);
+
+    const TEXT = {
+        TITLE: { [Language.EN]: "Divide the Deck", [Language.ZH_TW]: "切斷連結" },
+        SUBTITLE: { [Language.EN]: "Tap to split the energy", [Language.ZH_TW]: "輕觸牌疊以劃分新的能量" }
+    };
 
     const handleCut = () => {
         if (isAnimating || hasCut) return;
@@ -32,10 +38,10 @@ const CutDeck: React.FC<CutDeckProps> = ({ config, onComplete }) => {
             {/* Instruction */}
             <div className="absolute top-[20%] text-center z-50 animate-in fade-in slide-in-from-bottom duration-700">
                 <h3 className="text-3xl font-serif font-bold text-from-white to-white/60 tracking-[0.2em] uppercase text-white">
-                    Divide the Deck
+                    {TEXT.TITLE[language]}
                 </h3>
                 <p className="text-amber-400/60 text-[10px] uppercase tracking-[0.4em] mt-4 font-bold animate-pulse">
-                    Tap to split the energy
+                    {TEXT.SUBTITLE[language]}
                 </p>
             </div>
 

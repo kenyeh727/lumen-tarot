@@ -2,15 +2,26 @@ import React, { useState } from 'react';
 import { RotateCw, Sparkles } from 'lucide-react';
 import { playSound } from '../utils/sound';
 import { DECK_CONFIGS } from '../constants';
-import { DeckType } from '../types';
+import { DeckType, Language } from '../types';
+
+// Localized Strings
+const TEXT = {
+    SHUFFLING: { [Language.EN]: "Mixing Fates", [Language.ZH_TW]: "命運交織中" },
+    RITUAL: { [Language.EN]: "Ritual Phase", [Language.ZH_TW]: "洗牌儀式" },
+    CHANNELING: { [Language.EN]: "Channeling", [Language.ZH_TW]: "連結星辰" },
+    BEGIN: { [Language.EN]: "Begin Shuffle", [Language.ZH_TW]: "開始洗牌" },
+    DESC_ACTIVE: { [Language.EN]: "Aligning stars with your query...", [Language.ZH_TW]: "星辰正在回應您的提問..." },
+    DESC_IDLE: { [Language.EN]: "Cleansing energy from the previous seeker", [Language.ZH_TW]: "正在淨化前次占卜的能量" }
+};
 
 interface TarotRitualProps {
     stage: 'SHUFFLING' | 'CUTTING';
     deckType: DeckType;
+    language: Language;
     onComplete: () => void;
 }
 
-const TarotRitual: React.FC<TarotRitualProps> = ({ deckType, onComplete }) => {
+const TarotRitual: React.FC<TarotRitualProps> = ({ deckType, language, onComplete }) => {
     const config = DECK_CONFIGS[deckType];
     const [isAnimating, setIsAnimating] = useState(false);
 
@@ -73,7 +84,7 @@ const TarotRitual: React.FC<TarotRitualProps> = ({ deckType, onComplete }) => {
             <div className="flex flex-col items-center gap-6 z-10">
                 <div className="text-center space-y-2 mb-4">
                     <h3 className="text-2xl md:text-3xl font-serif font-bold text-white tracking-[0.3em] uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
-                        {isAnimating ? "Mixing Fates" : "Ritual Phase"}
+                        {isAnimating ? TEXT.SHUFFLING[language] : TEXT.RITUAL[language]}
                     </h3>
                     <div className="h-0.5 w-24 mx-auto bg-gradient-to-r from-transparent via-amber-400/50 to-transparent"></div>
                 </div>
@@ -89,7 +100,7 @@ const TarotRitual: React.FC<TarotRitualProps> = ({ deckType, onComplete }) => {
                     {/* Content */}
                     <div className="relative flex items-center gap-4 text-white font-bold tracking-[0.25em] uppercase text-sm">
                         <RotateCw className={`text-amber-400 ${isAnimating ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'}`} size={20} />
-                        <span>{isAnimating ? 'Channeling' : 'Begin Shuffle'}</span>
+                        <span>{isAnimating ? TEXT.CHANNELING[language] : TEXT.BEGIN[language]}</span>
                     </div>
 
                     {/* Hover Glow */}
@@ -97,7 +108,7 @@ const TarotRitual: React.FC<TarotRitualProps> = ({ deckType, onComplete }) => {
                 </button>
 
                 <p className="text-white/30 text-[10px] uppercase tracking-[0.4em] font-medium text-center max-w-[200px] leading-relaxed">
-                    {isAnimating ? "Aligning stars with your query..." : "Cleansing energy from the previous seeker"}
+                    {isAnimating ? TEXT.DESC_ACTIVE[language] : TEXT.DESC_IDLE[language]}
                 </p>
 
                 {/* Shuffle Verification - shows a random number each time */}

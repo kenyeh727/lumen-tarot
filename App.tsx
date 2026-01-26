@@ -640,6 +640,7 @@ const App: React.FC = () => {
                     <TarotRitual
                       stage={stage}
                       deckType={deckType}
+                      language={language}
                       onComplete={() => setStage(AppStage.CUTTING)}
                     />
                   );
@@ -647,6 +648,7 @@ const App: React.FC = () => {
                   return (
                     <CutDeck
                       config={activeConfig}
+                      language={language}
                       onComplete={() => setStage(AppStage.DRAWING)}
                     />
                   );

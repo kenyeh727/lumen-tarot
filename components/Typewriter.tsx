@@ -11,6 +11,12 @@ const Typewriter: React.FC<TypewriterProps> = ({ text, speed = 30, onComplete, c
   const [displayedText, setDisplayedText] = useState('');
   const completedRef = useRef(false);
   const textRef = useRef('');
+  const onCompleteRef = useRef(onComplete);
+
+  // Update ref when onComplete changes
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   // Guard clause: if text is null/undefined/empty, don't render anything
   if (!text) {
@@ -19,29 +25,32 @@ const Typewriter: React.FC<TypewriterProps> = ({ text, speed = 30, onComplete, c
   }
 
   useEffect(() => {
-    // Prevent reset if text hasn't changed substantially
-    if (text === textRef.current) return;
+    // If text changes, reset state
+    if (text !== textRef.current) {
+      textRef.current = text;
+      setDisplayedText('');
+      completedRef.current = false;
+    } else if (completedRef.current) {
+      // If same text and already completed, do nothing
+      return;
+    }
 
-    textRef.current = text;
-    setDisplayedText('');
-    completedRef.current = false;
-
-    let i = 0;
+    let i = displayedText.length;
     const timer = setInterval(() => {
       if (i < text.length) {
-        setDisplayedText((prev) => text.substring(0, i + 1));
+        setDisplayedText(text.substring(0, i + 1));
         i++;
       } else {
         clearInterval(timer);
-        if (!completedRef.current && onComplete) {
+        if (!completedRef.current && onCompleteRef.current) {
           completedRef.current = true;
-          onComplete();
+          onCompleteRef.current();
         }
       }
     }, speed);
 
     return () => clearInterval(timer);
-  }, [text, speed, onComplete]);
+  }, [text, speed]); // Removed onComplete dependency
 
   return <div className={`whitespace-pre-wrap break-words ${className}`}>{displayedText}</div>;
 };

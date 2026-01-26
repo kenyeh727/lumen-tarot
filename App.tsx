@@ -223,7 +223,7 @@ const App: React.FC = () => {
   };
 
   const finalizeCardSelect = async (card: TarotCard) => {
-    if (selectionLock.current) return; // Prevent race conditions
+    if (selectionLock.current) return;
     if (selectedCards.length >= targetCardCount) return;
 
     selectionLock.current = true;
@@ -249,13 +249,11 @@ const App: React.FC = () => {
     const updatedSelections = [...selectedCards, newSelection];
     setSelectedCards(updatedSelections);
 
-    // Only clear the candidate immediately if we are NOT at the target count.
-    // If we ARE at the target count, keep it open to show the loader inside the dialog.
+    // Only clear candidate if not yet at target count
     if (updatedSelections.length < targetCardCount) {
       setSelectedCandidate(null);
     }
 
-    // Release lock after small delay
     setTimeout(() => { selectionLock.current = false; }, 500);
 
     if (updatedSelections.length === targetCardCount) {
@@ -264,43 +262,29 @@ const App: React.FC = () => {
         console.log('🎴 [CARDS] All cards selected, generating reading...');
         const result = await generateReading(question, updatedSelections, intent, spreadType, deckType, language);
 
-        // Clear candidate now that reading is done
         setSelectedCandidate(null);
-        console.log('📊 [READING] Generated reading data:', {
-          hasSummary: !!result.summary,
-          hasAnalysis: !!result.analysis,
-          analysisLength: result.analysis?.length || 0,
-          hasFlavorText: !!result.flavorText,
-          allKeys: Object.keys(result)
-        });
-
-        // CRITICAL: Use flushSync to ensure reading state is set synchronously
-        // This prevents the race condition where REVEALING stage renders before reading is populated
-        console.log('✅ [READING] Setting reading data and transitioning to REVEALING stage');
         setReading(result);
-        // Use setTimeout to ensure state update completes before stage transition
+
+        // Transition to REVEALING
         setTimeout(() => {
-          console.log('✅ [READING] Reading state confirmed, now transitioning to REVEALING');
           setStage(AppStage.REVEALING);
         }, 0);
 
-        // Increment usage count after successful reading generation
+        // Usage and History
         if (user) {
           try {
             await incrementUsageCount(user.id);
-            // Refresh profile to update UI
             await refreshProfile();
-          } catch (error) {
-            console.error('Failed to increment usage count:', error);
+          } catch (e) {
+            console.error('Usage count failed', e);
           }
         }
 
+        // Generate images for cards that don't have them
         updatedSelections.forEach(async (sel, idx) => {
           if (sel.generatedImageUrl) return;
-
           const cardDisplayName = sel.isReversed ? `${sel.card.name} (Reversed)` : sel.card.name;
           const imageUrl = await generateCardImage(sel.card.id, cardDisplayName, deckType);
-
           if (imageUrl) {
             setSelectedCards(prev => {
               const newList = [...prev];
@@ -310,9 +294,8 @@ const App: React.FC = () => {
           }
         });
 
-        const entryId = Date.now().toString();
         const newEntry: HistoryEntry = {
-          id: entryId,
+          id: Date.now().toString(),
           timestamp: Date.now(),
           question,
           intent,
@@ -324,9 +307,7 @@ const App: React.FC = () => {
 
       } catch (error) {
         console.error("Critical Oracle Error:", error);
-        // On live site, if generateReading fails, we stay in REVEALING briefly 
-        // but the fallback reading will eventually be set by generateReading's own catch block.
-        // If it throws even with fallback, we at least don't reset the whole session.
+        setSelectedCandidate(null);
         setStage(AppStage.READING);
       } finally {
         setIsGenerating(false);
@@ -810,25 +791,14 @@ const App: React.FC = () => {
                     </div>
                   );
                 case AppStage.REVEALING:
-                  // GUARD CLAUSE: Don't render if reading is null
-                  if (!reading) {
-                    console.error('🚨 [REVEALING] Stage entered but reading is null, showing loader...');
-                    return (
-                      <div className="w-full h-full flex flex-col items-center justify-center">
-                        <CustomLoader />
-                        <p className="text-gray-400 text-xs mt-4 uppercase tracking-widest">
-                          {language === Language.ZH_TW ? '正在解讀星辰...' : 'Reading the stars...'}
-                        </p>
-                      </div>
-                    );
-                  }
+                  if (!reading) return null;
                   return (
                     <div className="w-full h-full overflow-hidden">
                       <div className="h-full flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-1000">
                         <div className="mb-12">
                           <CustomLoader />
                         </div>
-                        <div className="w-full max-w-2xl glass-panel p-8 md:p-12 rounded-[40px] border border-white/10 shadow-glass relative">
+                        <div className="w-full max-w-2xl glass-panel p-8 md:p-12 rounded-[40px] border border-white/10 shadow-glass relative group">
                           <div className="absolute -top-4 -left-4 w-12 h-12 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
                           <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-accent/20 rounded-full blur-xl animate-pulse"></div>
 
@@ -836,14 +806,21 @@ const App: React.FC = () => {
                             text={reading.flavorText || t.loadingFlavor}
                             className="text-xl md:text-3xl text-white font-serif italic leading-relaxed md:leading-loose text-center drop-shadow-sm font-lora"
                             onComplete={() => {
-                              console.log('⏱️ [TYPEWRITER] Animation complete, reading exists:', !!reading);
-                              console.log('⏱️ [TYPEWRITER] Transitioning to READING stage in 1500ms...');
                               setTimeout(() => {
-                                console.log('⏱️ [TYPEWRITER] Setting stage to READING now');
                                 setStage(AppStage.READING);
-                              }, 1500);
+                              }, 1200);
                             }}
                           />
+
+                          {/* Manual skip button that appears slightly faded footer */}
+                          <div className="mt-8 flex justify-center">
+                            <button
+                              onClick={() => setStage(AppStage.READING)}
+                              className="px-6 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] tracking-[0.3em] font-bold text-white/40 hover:text-white hover:bg-white/10 transition-all uppercase"
+                            >
+                              {language === Language.ZH_TW ? '點擊跳過' : 'CLICK TO SKIP'}
+                            </button>
+                          </div>
                         </div>
                         <p className="mt-8 text-white/30 text-[10px] uppercase tracking-[0.5em] animate-pulse font-bold">
                           {language === Language.ZH_TW ? '星辰正在低語' : 'THE STARS ARE WHISPERING'}

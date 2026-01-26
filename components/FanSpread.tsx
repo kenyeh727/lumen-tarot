@@ -15,7 +15,8 @@ const FanSpread: React.FC<FanSpreadProps> = ({ cards, config, onSelect, selected
 
   const [layout, setLayout] = useState({
     radii: { x: 0, y: 0 },
-    cardSize: { w: 0, h: 0 }
+    cardSize: { w: 0, h: 0 },
+    rotationOffset: 0
   });
 
   useEffect(() => {
@@ -59,7 +60,8 @@ const FanSpread: React.FC<FanSpreadProps> = ({ cards, config, onSelect, selected
 
       setLayout({
         radii: { x: radiusX, y: radiusY },
-        cardSize: { w: cardW, h: cardH }
+        cardSize: { w: cardW, h: cardH },
+        rotationOffset: Math.random() * Math.PI * 2 // Random starting rotation
       });
     };
 
@@ -82,7 +84,7 @@ const FanSpread: React.FC<FanSpreadProps> = ({ cards, config, onSelect, selected
     },
     fanned: (i: number) => {
       const angleStep = (2 * Math.PI) / totalCards;
-      const angle = i * angleStep - Math.PI / 2;
+      const angle = i * angleStep - Math.PI / 2 + layout.rotationOffset;
 
       const x = Math.cos(angle) * layout.radii.x;
       const y = Math.sin(angle) * layout.radii.y;

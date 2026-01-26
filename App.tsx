@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Sparkles, Globe, RotateCcw, Check, History, X, Calendar, ArrowLeft, Hash, Book, Share2 } from 'lucide-react';
+import { Sparkles, Globe, RotateCcw, Check, History, X, Calendar, ArrowLeft, Hash, Book, Share2, LogOut } from 'lucide-react';
 import StarField from './components/StarField';
 import Typewriter from './components/Typewriter';
 import DeckSelector from './components/DeckSelector';
@@ -20,11 +20,12 @@ import { analyzeIntent, generateReading, generateCardImage, getStoredImage } fro
 import { checkUsageLimit, incrementUsageCount } from './services/authService';
 import { useAuth } from './contexts/AuthContext';
 import { playSound } from './utils/sound';
+import { shuffleArray } from './utils/common';
 // @ts-ignore
 import html2canvas from 'html2canvas';
 
 const App: React.FC = () => {
-  const { user, profile, loading, refreshProfile } = useAuth();
+  const { user, profile, loading, refreshProfile, logout } = useAuth();
   const [language, setLanguage] = useState<Language>(Language.ZH_TW);
   const [stage, setStage] = useState<AppStage>(AppStage.LOBBY);
   const [question, setQuestion] = useState('');
@@ -41,6 +42,7 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [cutEffect, setCutEffect] = useState<{ x: number, y: number } | null>(null);
+  const [shuffledDeck, setShuffledDeck] = useState<TarotCard[]>([]);
 
   // Sharing State
   const shareCardRef = useRef<HTMLDivElement>(null);
@@ -54,8 +56,20 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener('resize', handleResize);
+    console.warn("🔥 [VERIFICATION] App Code Updated!");
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // DEBUG LOGGING FOR SHUFFLE VERIFICATION
+  if (shuffledDeck.length > 0) {
+    console.warn("🎨 [RENDER] shuffledDeck[0]:", shuffledDeck[0]?.name, "ID:", shuffledDeck[0]?.id);
+  } else {
+    console.log("🎨 [RENDER] shuffledDeck is EMPTY");
+  }
+
+  useEffect(() => {
+    console.log("App State:", { stage, user: user?.id, loading, profile: !!profile });
+  }, [stage, user, loading, profile]);
 
   const t = TRANSLATIONS[language];
 
@@ -76,6 +90,9 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('oracle_history', JSON.stringify(history));
   }, [history]);
+
+  // Shuffling moved to handleInquirySubmit to ensure fresh command execution
+
 
   const handleDeckSelect = (selectedMode: DeckType) => {
     setDeckType(selectedMode);
@@ -106,7 +123,14 @@ const App: React.FC = () => {
     playSound('select');
     setSelectedCards([]);
     setReading(null);
-    // Move to Shuffling Phase
+
+    // Explicitly shuffle using Fisher-Yates (Knuth) algorithm 
+    // This ensures true randomness on every single draw
+    const newDeck = shuffleArray([...activeDeckData]);
+    setShuffledDeck(newDeck);
+    console.warn("🎲 [REALTIME] FRESH SHUFFLE TRIGGERED. First Card ID:", newDeck[0].id);
+
+    // Move to Shuffling Phase FIRST
     setStage(AppStage.SHUFFLING);
 
     let newSpread = SpreadType.ONE_CARD;
@@ -392,7 +416,7 @@ const App: React.FC = () => {
         {/* --- FAN SPREAD SELECTOR (FULL HEIGHT) --- */}
         <div className="flex-grow relative w-full flex items-center justify-center">
           <FanSpread
-            cards={activeDeckData}
+            cards={shuffledDeck}
             config={activeConfig}
             onSelect={(card) => { setSelectedCandidate(card); playSound('select'); }}
             selectedCardIds={selectedCards.map(s => s.card.id)}
@@ -432,6 +456,26 @@ const App: React.FC = () => {
       </div>
     );
   };
+
+  if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#1c1d22] text-white p-6 text-center">
+        <div className="max-w-md glass-panel p-8 rounded-[32px] border border-red-500/30">
+          <h2 className="text-2xl font-bold text-red-400 mb-4">⚠️ 配置缺失 / Config Missing</h2>
+          <p className="text-gray-300 mb-6 leading-relaxed">
+            找不到 Supabase 環境變數。請確保您已建立 <b>.env</b> 檔案或是已在部署平台設置環境變數。
+          </p>
+          <div className="bg-black/40 p-4 rounded-xl text-left text-xs font-mono text-gray-400 mb-6">
+            VITE_SUPABASE_URL=...<br />
+            VITE_SUPABASE_ANON_KEY=...
+          </div>
+          <p className="text-sm text-gray-500">
+            請參考 .env.example 並重新啟動開發伺服器。
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 w-full h-full overflow-hidden flex flex-col bg-quin-gradient-dark text-white selection:bg-primary selection:text-white">
@@ -484,7 +528,18 @@ const App: React.FC = () => {
             <span className="hidden md:inline">{language === Language.ZH_TW ? '紀錄' : 'HISTORY'}</span>
           </button>
 
-          {user && <UserMenu language={language} />}
+          {user && (
+            <div className="flex items-center gap-2">
+              <UserMenu language={language} />
+              <button
+                onClick={() => { if (window.confirm(language === Language.ZH_TW ? '確定要登出嗎？' : 'Are you sure you want to sign out?')) logout(); }}
+                className="flex items-center justify-center text-gray-400 hover:text-red-400 transition-all bg-white/5 hover:bg-red-500/10 w-[44px] h-[44px] rounded-full backdrop-blur-md border border-white/10"
+                title={language === Language.ZH_TW ? '登出' : 'Sign Out'}
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -532,93 +587,163 @@ const App: React.FC = () => {
       )}
 
       {/* Main Content Area */}
-      <div className="relative z-20 w-full h-full flex flex-col">
-        {!user && !loading && (
-          <LoginPage language={language} />
-        )}
+      <main className="flex-1 relative z-20 w-full h-full flex flex-col overflow-hidden">
+        {loading ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 animate-in fade-in duration-500">
+            <CustomLoader />
+            <p className="text-[#a78bfa] text-xs tracking-[0.4em] uppercase font-bold animate-pulse">
+              {language === Language.ZH_TW ? '正在連結星辰...' : 'CONNECTING TO STARS...'}
+            </p>
+          </div>
+        ) : user ? (
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+            {(() => {
+              switch (stage) {
+                case AppStage.LIBRARY:
+                  return <CardLibrary language={language} onBack={() => setStage(AppStage.LOBBY)} />;
+                case AppStage.LOBBY:
+                  return <DeckSelector language={language} onSelect={handleDeckSelect} />;
+                case AppStage.INQUIRY:
+                  return (
+                    <div className="w-full h-full overflow-y-auto no-scrollbar z-20">
+                      <div className="min-h-full flex flex-col items-center justify-center p-6 pt-24 pb-safe animate-in fade-in zoom-in duration-500">
+                        <div className="relative z-10 animate-bounce mb-[-10px]">
+                          <img src="https://cdn-icons-png.flaticon.com/512/4392/4392520.png" alt="Mascot" className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-[0_0_30px_rgba(103,81,246,0.6)]" />
+                        </div>
 
-        {user && stage === AppStage.LIBRARY && (
-          <CardLibrary language={language} onBack={() => setStage(AppStage.LOBBY)} />
-        )}
+                        <UsageLimitBanner language={language} />
 
-        {user && stage === AppStage.LOBBY && (
-          <DeckSelector language={language} onSelect={handleDeckSelect} />
-        )}
-
-        {user && stage === AppStage.INQUIRY && (
-          <div className="w-full h-full overflow-y-auto no-scrollbar z-20">
-            <div className="min-h-full flex flex-col items-center justify-center p-6 pt-24 pb-safe animate-in fade-in zoom-in duration-500">
-              <div className="relative z-10 animate-bounce mb-[-10px]">
-                <img src="https://cdn-icons-png.flaticon.com/512/4392/4392520.png" alt="Mascot" className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-[0_0_30px_rgba(103,81,246,0.6)]" />
-              </div>
-
-              <UsageLimitBanner language={language} />
-
-              <div className="glass-panel p-8 md:p-12 text-center max-w-xl w-full relative z-0 mt-4 rounded-[40px] border border-white/20 shadow-glass">
-                <h1 className="text-3xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-2 font-bold tracking-tight drop-shadow-sm font-serif">{activeConfig.label[language]}</h1>
-                <p className="text-gray-400 text-[10px] tracking-[0.3em] uppercase mb-10 font-bold">{activeConfig.tagline[language]}</p>
-                <form onSubmit={handleInquirySubmit} className="w-full flex flex-col items-center">
-                  <div className="relative w-full mb-8 group">
-                    <input
-                      type="text"
-                      value={question}
-                      onChange={e => setQuestion(e.target.value)}
-                      placeholder={t.placeholder}
-                      className="w-full bg-black/20 shadow-inner border border-white/10 rounded-full py-6 px-8 text-center text-lg md:text-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all font-medium backdrop-blur-sm"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="flex gap-10 justify-center mb-8 items-center w-full">
-                    <div className="text-center w-full">
-                      <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-3 font-bold">{t.cards}</div>
-                      <div className="flex justify-center gap-3">
-                        {[1, 2, 3].map(n => (
-                          <button key={n} type="button" onClick={() => setTargetCardCount(n)} className={`w-12 h-12 rounded-full text-sm font-bold transition-all border ${targetCardCount === n ? 'bg-primary border-primary text-white shadow-lg scale-110' : 'bg-transparent border-white/20 text-gray-400 hover:border-white/40'}`}>{n}</button>
-                        ))}
+                        <div className="glass-panel p-8 md:p-12 text-center max-w-xl w-full relative z-0 mt-4 rounded-[40px] border border-white/20 shadow-glass">
+                          <h1 className="text-3xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-2 font-bold tracking-tight drop-shadow-sm font-serif">{activeConfig.label[language]}</h1>
+                          <p className="text-gray-400 text-[10px] tracking-[0.3em] uppercase mb-10 font-bold">{activeConfig.tagline[language]}</p>
+                          <form onSubmit={handleInquirySubmit} className="w-full flex flex-col items-center">
+                            <div className="relative w-full mb-8 group">
+                              <input
+                                type="text"
+                                value={question}
+                                onChange={e => setQuestion(e.target.value)}
+                                placeholder={t.placeholder}
+                                className="w-full bg-black/20 shadow-inner border border-white/10 rounded-full py-6 px-8 text-center text-lg md:text-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all font-medium backdrop-blur-sm"
+                                autoFocus
+                              />
+                            </div>
+                            <div className="flex gap-10 justify-center mb-8 items-center w-full">
+                              <div className="text-center w-full">
+                                <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-3 font-bold">{t.cards}</div>
+                                <div className="flex justify-center gap-3">
+                                  {[1, 2, 3].map(n => (
+                                    <button key={n} type="button" onClick={() => setTargetCardCount(n)} className={`w-12 h-12 rounded-full text-sm font-bold transition-all border ${targetCardCount === n ? 'bg-primary border-primary text-white shadow-lg scale-110' : 'bg-transparent border-white/20 text-gray-400 hover:border-white/40'}`}>{n}</button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <button type="submit" disabled={!question.trim() || (profile && !profile.is_unlimited && profile.usage_count >= 10)} className="w-full py-5 btn-primary rounded-full text-sm tracking-[0.2em] uppercase font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-1">{t.start}</button>
+                          </form>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <button type="submit" disabled={!question.trim() || (profile && profile.usage_count >= 10)} className="w-full py-5 btn-primary rounded-full text-sm tracking-[0.2em] uppercase font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-1">{t.start}</button>
-                </form>
-              </div>
-            </div>
+                  );
+                case AppStage.SHUFFLING:
+                  return (
+                    <TarotRitual
+                      stage={stage}
+                      deckType={deckType}
+                      onComplete={() => setStage(AppStage.CUTTING)}
+                    />
+                  );
+                case AppStage.CUTTING:
+                  return (
+                    <CutDeck
+                      config={activeConfig}
+                      onComplete={() => setStage(AppStage.DRAWING)}
+                    />
+                  );
+                case AppStage.DRAWING:
+                  return (
+                    <div className="flex flex-col w-full h-full pt-16 md:pt-20 pb-safe overflow-hidden relative z-20">
+                      <div className="flex-none w-full text-center px-4 mb-2 md:mb-4 z-40">
+                        <h2 className="text-2xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-b from-white to-white/70 font-bold tracking-[0.2em] uppercase">{t.drawTitle}</h2>
+                        <p className="text-white/50 text-[10px] uppercase tracking-[0.4em] mt-2 font-bold">{t.drawSubtitle}</p>
+                      </div>
+
+                      <div className="flex-grow relative w-full flex items-center justify-center">
+                        {(() => {
+                          console.warn("🎨 [DRAWING-RENDER] Passing this card to FanSpread:", shuffledDeck[0]?.name);
+                          // CRITICAL: Ensure `key` forces remount of FanSpread component when first card changes
+                          // And ensure `cards` prop receives the `shuffledDeck`.
+                          return (
+                            <FanSpread
+                              key={`fan-${shuffledDeck[0]?.id}-${Date.now()}`}
+                              cards={shuffledDeck}
+                              config={activeConfig}
+                              onSelect={(card) => { setSelectedCandidate(card); playSound('select'); }}
+                              selectedCardIds={selectedCards.map(s => s.card.id)}
+                            />
+                          );
+                        })()}
+                      </div>
+
+                      <div className="flex-none flex flex-col items-center gap-6 z-40 mt-4 absolute bottom-24 left-0 w-full pointer-events-none">
+                        <div className="flex gap-4">
+                          {[...Array(targetCardCount)].map((_, i) => (
+                            <div key={i} className={`w-10 h-14 rounded-lg border border-dashed transition-all duration-500 backdrop-blur-sm ${i < selectedCards.length ? 'border-primary bg-primary/20' : 'border-white/20'}`}>
+                              {i < selectedCards.length && <div className="w-full h-full flex items-center justify-center"><Check className="text-primary" size={16} /></div>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {selectedCandidate && (
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setSelectedCandidate(null)}></div>
+                          <div className="relative w-full max-w-sm aspect-square glass-panel flex flex-col items-center justify-center p-8 md:p-12 text-center rounded-3xl border border-white/10">
+                            <Sparkles className="text-primary mb-6 animate-pulse" size={32} />
+                            <h3 className="text-xl md:text-2xl text-white font-bold mb-2 tracking-widest uppercase">
+                              {language === Language.ZH_TW ? '這就是命運的指引嗎？' : 'Is this your fate?'}
+                            </h3>
+                            <p className="text-gray-400 text-[10px] uppercase tracking-[0.3em] mb-10 font-bold">{selectedCandidate.name_i18n[language]}</p>
+                            <div className="flex gap-6 w-full">
+                              <button onClick={() => finalizeCardSelect(selectedCandidate)} className="flex-1 py-4 btn-primary rounded-full text-[10px] tracking-widest uppercase shadow-xl active:scale-95 font-bold">
+                                {language === Language.ZH_TW ? '確認' : 'CONFIRM'}
+                              </button>
+                              <button onClick={() => setSelectedCandidate(null)} className="flex-1 py-4 bg-white/5 text-gray-300 border border-white/10 rounded-full text-[10px] tracking-widest uppercase hover:bg-white/10 transition-all active:scale-95 font-bold">
+                                {language === Language.ZH_TW ? '返回' : 'BACK'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                case AppStage.REVEALING:
+                  return (
+                    <div className="w-full h-full overflow-y-auto no-scrollbar">
+                      <div className="min-h-full flex flex-col items-center justify-center px-6 text-center pt-24 pb-12">
+                        <div className="min-h-[120px] max-w-2xl glass-panel p-10 flex items-center justify-center mb-8 rounded-[40px] border border-white/10 shadow-glass">
+                          <Typewriter text={reading?.flavorText || t.loadingFlavor} className="text-xl md:text-2xl text-gray-200 font-medium leading-loose" onComplete={() => { if (reading) setTimeout(() => setStage(AppStage.READING), 1000); }} />
+                        </div>
+                        <CustomLoader />
+                      </div>
+                    </div>
+                  );
+                case AppStage.READING:
+                  return renderReadingStage();
+                default:
+                  return <DeckSelector language={language} onSelect={handleDeckSelect} />;
+              }
+            })()}
           </div>
+        ) : (
+          <LoginPage language={language} />
         )}
-
-        {user && stage === AppStage.SHUFFLING && (
-          <TarotRitual
-            stage={stage}
-            deckType={deckType}
-            onComplete={() => setStage(AppStage.CUTTING)}
-          />
-        )}
-
-        {user && stage === AppStage.CUTTING && (
-          <CutDeck
-            config={activeConfig}
-            onComplete={() => setStage(AppStage.DRAWING)}
-          />
-        )}
-
-        {user && stage === AppStage.DRAWING && renderSelectionStage()}
-
-        {user && stage === AppStage.REVEALING && (
-          <div className="w-full h-full overflow-y-auto no-scrollbar">
-            <div className="min-h-full flex flex-col items-center justify-center px-6 text-center pt-24 pb-12">
-              <div className="min-h-[120px] max-w-2xl glass-panel p-10 flex items-center justify-center mb-8 rounded-[40px] border border-white/10 shadow-glass">
-                <Typewriter text={reading?.flavorText || t.loadingFlavor} className="text-xl md:text-2xl text-gray-200 font-medium leading-loose" onComplete={() => { if (reading) setTimeout(() => setStage(AppStage.READING), 1000); }} />
-              </div>
-              <CustomLoader />
-            </div>
-          </div>
-        )}
-
-        {user && stage === AppStage.READING && renderReadingStage()}
-      </div>
+      </main>
 
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
+      <div className="fixed bottom-2 right-4 text-[8px] text-white/20 pointer-events-none z-[9999]">
+        v1.2-SHUFFLE-FIX
+      </div>
     </div>
   );
 };

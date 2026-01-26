@@ -99,6 +99,11 @@ const TarotRitual: React.FC<TarotRitualProps> = ({ deckType, onComplete }) => {
                 <p className="text-white/30 text-[10px] uppercase tracking-[0.4em] font-medium text-center max-w-[200px] leading-relaxed">
                     {isAnimating ? "Aligning stars with your query..." : "Cleansing energy from the previous seeker"}
                 </p>
+
+                {/* Shuffle Verification - shows a random number each time */}
+                <p className="text-amber-400/40 text-[8px] font-mono mt-2">
+                    Shuffle ID: {Math.random().toString(36).substring(7)}
+                </p>
             </div>
 
             <style>{`

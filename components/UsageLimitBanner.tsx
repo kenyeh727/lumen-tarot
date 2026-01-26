@@ -13,11 +13,29 @@ const UsageLimitBanner: React.FC<UsageLimitBannerProps> = ({ language }) => {
 
     if (!profile) return null;
 
+    if (profile.is_unlimited) {
+        return (
+            <div className="w-full max-w-xl mx-auto mb-6 glass-panel p-4 rounded-2xl border border-primary/50 bg-primary/10">
+                <div className="flex items-center gap-3">
+                    <Zap className="text-primary flex-shrink-0 animate-pulse" size={20} />
+                    <div className="flex-1">
+                        <p className="text-primary-200 font-bold text-sm">
+                            {language === Language.ZH_TW ? '✨ 無限次數占卜已啟用' : '✨ Unlimited readings enabled'}
+                        </p>
+                        <p className="text-primary-300/60 text-xs mt-1">
+                            {language === Language.ZH_TW ? '盡情探索星辰的指引吧！' : 'Explore the guidance of the stars as much as you wish!'}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     const remaining = USAGE_LIMIT - profile.usage_count;
     const percentage = (remaining / USAGE_LIMIT) * 100;
 
     // 用完了
-    if (remaining === 0) {
+    if (remaining <= 0) {
         return (
             <div className="w-full max-w-xl mx-auto mb-6 glass-panel p-4 rounded-2xl border-2 border-red-500/50 bg-red-900/20">
                 <div className="flex items-center gap-3">

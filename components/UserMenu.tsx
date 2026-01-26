@@ -13,7 +13,9 @@ const UserMenu: React.FC<UserMenuProps> = ({ language }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    if (!user || !profile) return null;
+    if (!user) return null;
+
+    const isUnlimited = profile?.is_unlimited ?? false;
 
     const handleLogout = async () => {
         try {
@@ -25,7 +27,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ language }) => {
         }
     };
 
-    const remaining = USAGE_LIMIT - profile.usage_count;
+    const remaining = profile ? USAGE_LIMIT - profile.usage_count : 0;
 
     return (
         <div className="relative">
@@ -53,20 +55,24 @@ const UserMenu: React.FC<UserMenuProps> = ({ language }) => {
                             </p>
                         </div>
 
-                        <div className="bg-white/5 rounded-xl p-3 mb-3">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs text-gray-400 uppercase tracking-wider font-bold">
-                                    {language === Language.ZH_TW ? '剩餘次數' : 'REMAINING'}
-                                </span>
-                                <span className="text-primary font-bold">{remaining}/{USAGE_LIMIT}</span>
+                        {profile && (
+                            <div className="bg-white/5 rounded-xl p-3 mb-3">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs text-gray-400 uppercase tracking-wider font-bold">
+                                        {language === Language.ZH_TW ? '剩餘次數' : 'REMAINING'}
+                                    </span>
+                                    <span className="text-primary font-bold">
+                                        {isUnlimited ? (language === Language.ZH_TW ? '無限' : '∞') : `${remaining}/${USAGE_LIMIT}`}
+                                    </span>
+                                </div>
+                                <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+                                        style={{ width: isUnlimited ? '100%' : `${(remaining / USAGE_LIMIT) * 100}%` }}
+                                    />
+                                </div>
                             </div>
-                            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
-                                    style={{ width: `${(remaining / USAGE_LIMIT) * 100}%` }}
-                                />
-                            </div>
-                        </div>
+                        )}
 
                         <button
                             onClick={handleLogout}

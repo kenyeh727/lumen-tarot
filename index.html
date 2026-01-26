@@ -1,120 +1,166 @@
-
 <!DOCTYPE html>
 <html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Lumen Tarot</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'system-ui', 'sans-serif'],
-              serif: ['Lora', 'serif'],
-            },
-            colors: {
-              background: '#08090c',
-              surface: '#1c1d22',
-              primary: '#6751F6',
-              secondary: '#9d6eba',
-              accent: '#F6DC54',
-              'quin-bg': '#EAE8FA',
-              'quin-dark': '#222337'
-            },
-            backgroundImage: {
-              'quin-gradient': 'linear-gradient(180deg, #F8F0FF 0%, #EAE8FA 100%)',
-              'quin-gradient-dark': 'linear-gradient(180deg, #201d3d 0%, #1f1c3b 100%)',
-              'glass': 'linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%)',
-              'glass-dark': 'linear-gradient(180deg, rgba(34, 35, 55, 0.7) 0%, rgba(34, 35, 55, 0.4) 100%)'
-            },
-            boxShadow: {
-              'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-              'glass-hover': '0 12px 48px 0 rgba(103, 81, 246, 0.25)',
-              'quin': '0 203px 57px 0 rgba(31,14,52,0), 0 130px 52px 0 rgba(31,14,52,0.03), 0 73px 44px 0 rgba(31,14,52,0.1)'
-            }
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Lumen Tarot</title>
+  <script>
+    // Prevent browser extension conflicts
+    (function () {
+      const originalDefineProperty = Object.defineProperty;
+      Object.defineProperty = function (obj, prop, descriptor) {
+        if (prop === 'ethereum' && obj === window) {
+          try {
+            return originalDefineProperty.call(this, obj, prop, descriptor);
+          } catch (e) {
+            // Silently ignore ethereum redefinition errors
+            return obj[prop];
+          }
+        }
+        return originalDefineProperty.call(this, obj, prop, descriptor);
+      };
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            serif: ['Lora', 'serif'],
+          },
+          colors: {
+            background: '#08090c',
+            surface: '#1c1d22',
+            primary: '#6751F6',
+            secondary: '#9d6eba',
+            accent: '#F6DC54',
+            'quin-bg': '#EAE8FA',
+            'quin-dark': '#222337'
+          },
+          backgroundImage: {
+            'quin-gradient': 'linear-gradient(180deg, #F8F0FF 0%, #EAE8FA 100%)',
+            'quin-gradient-dark': 'linear-gradient(180deg, #201d3d 0%, #1f1c3b 100%)',
+            'glass': 'linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%)',
+            'glass-dark': 'linear-gradient(180deg, rgba(34, 35, 55, 0.7) 0%, rgba(34, 35, 55, 0.4) 100%)'
+          },
+          boxShadow: {
+            'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+            'glass-hover': '0 12px 48px 0 rgba(103, 81, 246, 0.25)',
+            'quin': '0 203px 57px 0 rgba(31,14,52,0), 0 130px 52px 0 rgba(31,14,52,0.03), 0 73px 44px 0 rgba(31,14,52,0.1)'
           }
         }
       }
-    </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-        background-color: #08090c;
-        color: #ffffff;
-        font-family: 'Inter', sans-serif;
-        -webkit-font-smoothing: antialiased;
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #08090c;
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 99px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Utilities */
+    .text-gradient {
+      background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .text-gradient-gold {
+      background: linear-gradient(135deg, #F6DC54, #F8E1A0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-primary {
+      background: #6751F6;
+      color: white;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(103, 81, 246, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: #5a46d4;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(103, 81, 246, 0.4);
+    }
+
+    .card-3d-wrap {
+      perspective: 1000px;
+    }
+
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    .pt-safe {
+      padding-top: env(safe-area-inset-top, 20px);
+    }
+
+    /* Animation Classes */
+    .fade-in {
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
       }
 
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
-      ::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.02);
-      }
-      ::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 99px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.2);
-      }
-
-      /* Utilities */
-      .text-gradient {
-        background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-      
-      .text-gradient-gold {
-        background: linear-gradient(135deg, #F6DC54, #F8E1A0);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-
-      .glass-panel {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-      }
-
-      .btn-primary {
-        background: #6751F6;
-        color: white;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 4px 12px rgba(103, 81, 246, 0.3);
-      }
-      .btn-primary:hover {
-        background: #5a46d4;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(103, 81, 246, 0.4);
-      }
-      
-      .card-3d-wrap { perspective: 1000px; }
-      .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
-      .pt-safe { padding-top: env(safe-area-inset-top, 20px); }
-      
-      /* Animation Classes */
-      .fade-in { animation: fadeIn 0.6s ease-out forwards; }
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-    <link rel="stylesheet" href="/index.css">
+    }
+  </style>
+  <link rel="stylesheet" href="/index.css">
 </head>
-  <body>
-    <div id="root"></div>
+
+<body>
+  <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>

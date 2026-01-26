@@ -19,18 +19,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const loadUserProfile = async (userId: string) => {
+    const loadUserProfile = async (userId: string, isInitial: boolean = false) => {
         try {
             const userProfile = await getUserProfile(userId);
             setProfile(userProfile);
         } catch (error) {
             console.error('Failed to load profile:', error);
+        } finally {
+            if (isInitial) setLoading(false);
         }
     };
 
     const refreshProfile = async () => {
         if (user) {
-            await loadUserProfile(user.id);
+            await loadUserProfile(user.id, false);
         }
     };
 
@@ -56,21 +58,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(currentUser);
 
             if (currentUser) {
-                await loadUserProfile(currentUser.id);
+                // If we already have a user, this is a refresh/reauth, don't set global loading
+                await loadUserProfile(currentUser.id, !user);
             } else {
                 setProfile(null);
+                setLoading(false);
             }
-
-            setLoading(false);
         });
 
-        // Also check session once on startup just in case
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (mounted && session) {
                 console.log("Initial Session Found");
                 setUser(session.user);
-                loadUserProfile(session.user.id);
-                setLoading(false);
+                loadUserProfile(session.user.id, true);
             } else if (mounted) {
                 setLoading(false);
             }

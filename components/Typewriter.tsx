@@ -15,7 +15,7 @@ const Typewriter: React.FC<TypewriterProps> = ({ text, speed = 30, onComplete, c
   useEffect(() => {
     // Prevent reset if text hasn't changed substantially
     if (text === textRef.current) return;
-    
+
     textRef.current = text;
     setDisplayedText('');
     completedRef.current = false;
@@ -37,7 +37,7 @@ const Typewriter: React.FC<TypewriterProps> = ({ text, speed = 30, onComplete, c
     return () => clearInterval(timer);
   }, [text, speed, onComplete]);
 
-  return <div className={className}>{displayedText}</div>;
+  return <div className={`whitespace-pre-wrap break-words ${className}`}>{displayedText}</div>;
 };
 
 export default Typewriter;

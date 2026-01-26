@@ -50,9 +50,6 @@ const UserMenu: React.FC<UserMenuProps> = ({ language }) => {
                     <div className="absolute right-0 top-14 z-50 w-72 glass-panel rounded-2xl border border-white/20 shadow-xl p-4 animate-in fade-in slide-in-from-top-2 duration-200">
                         <div className="border-b border-white/10 pb-3 mb-3">
                             <p className="text-white font-bold text-sm truncate">{user.email}</p>
-                            <p className="text-gray-400 text-xs mt-1">
-                                {language === Language.ZH_TW ? '用戶 ID' : 'User ID'}: {user.id.slice(0, 8)}...
-                            </p>
                         </div>
 
                         {profile && (

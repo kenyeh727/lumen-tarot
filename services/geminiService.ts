@@ -208,22 +208,23 @@ export const generateReading = async (
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-lite',
-      contents: [{ parts: [{ text: prompt }] }],
+      contents: [{ parts: [{ text: prompt + "\nPLEASE ENSURE: 1. Every sentence is complete and finished. 2. The 'flavorText' MUST be a complete poetic response. 3. The 'analysis' field MUST be very extensive (at least 500 characters)." }] }],
       config: {
+        maxOutputTokens: 4096,
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
           properties: {
+            flavorText: { type: Type.STRING },
             summary: { type: Type.STRING },
-            keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
             analysis: { type: Type.STRING },
+            keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
             advice: { type: Type.STRING },
             affirmation: { type: Type.STRING },
             luckyColor: { type: Type.STRING },
-            luckyNumber: { type: Type.STRING },
-            flavorText: { type: Type.STRING }
+            luckyNumber: { type: Type.STRING }
           },
-          required: ["summary", "keywords", "analysis", "advice", "affirmation", "luckyColor", "luckyNumber", "flavorText"]
+          required: ["flavorText", "summary", "analysis", "keywords", "advice", "affirmation", "luckyColor", "luckyNumber"]
         }
       }
     });
@@ -257,17 +258,17 @@ export const generateReading = async (
 };
 
 export const generateCardAnalysis = async (
-    cardName: string,
-    deckType: DeckType,
-    language: Language
+  cardName: string,
+  deckType: DeckType,
+  language: Language
 ): Promise<string> => {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+  const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
-    const langReq = language === Language.ZH_TW
-        ? "請使用繁體中文（台灣）。你是一位「星空狐狸」，語氣要溫柔、神秘且充滿智慧。"
-        : "Tone: Mystical, Wise, and Gentle. You are the 'Celestial Star Fox'.";
+  const langReq = language === Language.ZH_TW
+    ? "請使用繁體中文（台灣）。你是一位「星空狐狸」，語氣要溫柔、神秘且充滿智慧。"
+    : "Tone: Mystical, Wise, and Gentle. You are the 'Celestial Star Fox'.";
 
-    const prompt = `
+  const prompt = `
     Role: Celestial Star Fox (Tarot Guide)
     Card: ${cardName}
     Deck: ${DeckType[deckType]}
@@ -279,16 +280,16 @@ export const generateCardAnalysis = async (
     Format: Plain text paragraph.
   `;
 
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-lite',
-            contents: [{ parts: [{ text: prompt }] }]
-        });
-        return response.text || (language === Language.ZH_TW ? "星辰暫時沈默..." : "The stars are silent...");
-    } catch (error) {
-        console.error("Card Analysis Failed:", error);
-        return language === Language.ZH_TW
-            ? "目前無法連結到星空圖書館，請稍後再試。"
-            : "Unable to connect to the Celestial Library at this moment.";
-    }
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-lite',
+      contents: [{ parts: [{ text: prompt }] }]
+    });
+    return response.text || (language === Language.ZH_TW ? "星辰暫時沈默..." : "The stars are silent...");
+  } catch (error) {
+    console.error("Card Analysis Failed:", error);
+    return language === Language.ZH_TW
+      ? "目前無法連結到星空圖書館，請稍後再試。"
+      : "Unable to connect to the Celestial Library at this moment.";
+  }
 };

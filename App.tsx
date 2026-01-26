@@ -252,9 +252,10 @@ const App: React.FC = () => {
     // Release lock after small delay
     setTimeout(() => { selectionLock.current = false; }, 500);
 
+
     if (updatedSelections.length === targetCardCount) {
-      setStage(AppStage.REVEALING);
       try {
+        console.log('🎴 [CARDS] All cards selected, generating reading...');
         const result = await generateReading(question, updatedSelections, intent, spreadType, deckType, language);
         console.log('📊 [READING] Generated reading data:', {
           hasSummary: !!result.summary,
@@ -263,7 +264,12 @@ const App: React.FC = () => {
           hasFlavorText: !!result.flavorText,
           allKeys: Object.keys(result)
         });
+
+        // CRITICAL: Set reading data FIRST, then transition to REVEALING
+        // This ensures the Typewriter has data when it renders
         setReading(result);
+        console.log('✅ [READING] Reading data set, transitioning to REVEALING stage');
+        setStage(AppStage.REVEALING);
 
         // Increment usage count after successful reading generation
         if (user) {

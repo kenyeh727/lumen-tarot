@@ -79,7 +79,7 @@ export const analyzeIntent = async (question: string): Promise<{ category: Inten
   const ai = new GoogleGenAI({ apiKey: getApiKey() });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
+      model: 'gemini-3-flash',
       contents: [{ parts: [{ text: `Classify the intent of this query into one of these categories: Love, Career, Health, Spiritual, General. Query: "${question}"` }] }],
       config: {
         responseMimeType: 'application/json',
@@ -186,8 +186,8 @@ export const generateReading = async (
   const cardDetails = selectedCards.map(c => `- [${c.position}]: ${c.card.name} (${deckType === DeckType.TAROT && c.isReversed ? 'Reversed' : 'Upright'})`).join('\n');
 
   const langReq = language === Language.ZH_TW
-    ? "使用繁體中文（台灣）。你是一位「星空狐狸 (Celestial Star Fox)」，語氣要非常可愛、療癒、溫暖。當解釋負面牌義（如高塔、寶劍十）時，請將其轉化為「清理空間迎接美好」的轉機。句子要像對好朋友說話一樣親切。最後請給予一個魔法祝福。"
-    : "Tone: Kawaii, Uplifting, Warm, and Supportive. You are a 'Celestial Star Fox'. Frame negative cards as healing opportunities or clearing space for better things. Keep sentences conversational and friendly. End with a magical blessing.";
+    ? "使用繁體中文（台灣）。你是一位「星空狐狸 (Celestial Star Fox)」，語氣要非常可愛、療癒、溫暖。當解釋負面牌義（如高塔、寶劍十）時，請將其轉化為「清理空間迎接美好」的轉機。句子要像對好朋友說話一樣親切。最後請給予一個魔法祝福。請注意：『analysis』欄位的內容必須非常詳細，長度至少要達到 500 字以上。"
+    : "Tone: Kawaii, Uplifting, Warm, and Supportive. You are a 'Celestial Star Fox'. Frame negative cards as healing opportunities or clearing space for better things. Keep sentences conversational and friendly. End with a magical blessing. IMPORTANT: The content in the 'analysis' field must be very detailed, with a length of at least 500 characters.";
 
   const deckContext = `Deck Used: ${DeckType[deckType]}.`;
 
@@ -207,7 +207,7 @@ export const generateReading = async (
   console.log("[Gemini] Generating reading with prompt length:", prompt.length);
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
+      model: 'gemini-3-flash',
       contents: [{ parts: [{ text: prompt }] }],
       config: {
         responseMimeType: 'application/json',
@@ -246,7 +246,7 @@ export const generateReading = async (
     return {
       summary: "星空暫時被雲層遮蔽了",
       keywords: ["等待", "耐心", "平靜"],
-      analysis: "宇宙能量正在重新排列，請稍後再試。這通常是因為 API Key 設定不正確，或是指定的模型名稱（gemini-1.5-flash）無法在此區域使用。請檢查開發人員主控台 (F12) 的錯誤訊息。",
+      analysis: "宇宙能量正在重新排列，請稍後再試。這通常是因為 API Key 設定不正確，或是指定的模型名稱（gemini-3-flash）無法在此區域使用。請檢查開發人員主控台 (F12) 的錯誤訊息。",
       advice: "深呼吸，感受當下的寧靜。",
       affirmation: "我信任宇宙的安排。",
       luckyColor: "星空藍",

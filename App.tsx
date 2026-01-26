@@ -228,7 +228,6 @@ const App: React.FC = () => {
 
     selectionLock.current = true;
     playSound('flip');
-    setIsGenerating(true);
 
     let position: any = 'Single';
     if (targetCardCount === 2) position = selectedCards.length === 0 ? 'Situation' : 'Challenge';
@@ -249,16 +248,24 @@ const App: React.FC = () => {
 
     const updatedSelections = [...selectedCards, newSelection];
     setSelectedCards(updatedSelections);
-    setSelectedCandidate(null);
+
+    // Only clear the candidate immediately if we are NOT at the target count.
+    // If we ARE at the target count, keep it open to show the loader inside the dialog.
+    if (updatedSelections.length < targetCardCount) {
+      setSelectedCandidate(null);
+    }
 
     // Release lock after small delay
     setTimeout(() => { selectionLock.current = false; }, 500);
 
-
     if (updatedSelections.length === targetCardCount) {
+      setIsGenerating(true);
       try {
         console.log('🎴 [CARDS] All cards selected, generating reading...');
         const result = await generateReading(question, updatedSelections, intent, spreadType, deckType, language);
+
+        // Clear candidate now that reading is done
+        setSelectedCandidate(null);
         console.log('📊 [READING] Generated reading data:', {
           hasSummary: !!result.summary,
           hasAnalysis: !!result.analysis,
@@ -764,24 +771,30 @@ const App: React.FC = () => {
 
                       {selectedCandidate && (
                         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setSelectedCandidate(null)}></div>
-                          <div className="relative w-full max-w-sm aspect-square glass-panel flex flex-col items-center justify-center p-8 md:p-12 text-center rounded-3xl border border-white/10">
-                            <Sparkles className="text-primary mb-6 animate-pulse" size={32} />
-                            <h3 className="text-xl md:text-2xl text-white font-bold mb-2 tracking-widest uppercase">
+                          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => !isGenerating && setSelectedCandidate(null)}></div>
+                          <div className="relative w-full max-w-sm glass-panel flex flex-col items-center justify-center p-8 md:p-10 text-center rounded-[32px] border border-white/10 overflow-hidden min-h-[350px]">
+                            {isGenerating && (
+                              <div className="absolute inset-0 z-[210] bg-[#1c1d22]/90 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-300 p-6">
+                                <CustomLoader />
+                                <p className="mt-8 text-primary text-[10px] font-bold tracking-[0.4em] uppercase animate-pulse">
+                                  {language === Language.ZH_TW ? '正在讀取星辰指引' : 'READING THE STARS'}
+                                </p>
+                              </div>
+                            )}
+                            <div className="mb-6">
+                              <Sparkles className="text-primary animate-pulse" size={32} />
+                            </div>
+                            <h3 className="text-xl md:text-2xl text-white font-bold mb-3 tracking-widest uppercase">
                               {language === Language.ZH_TW ? '這就是命運的指引嗎？' : 'Is this your fate?'}
                             </h3>
-                            <p className="text-gray-400 text-[10px] uppercase tracking-[0.3em] mb-10 font-bold">{selectedCandidate.name_i18n[language]}</p>
-                            <div className="flex gap-6 w-full">
+                            <p className="text-gray-400 text-[10px] uppercase tracking-[0.3em] mb-10 font-bold px-4">{selectedCandidate.name_i18n[language]}</p>
+                            <div className="flex gap-4 w-full mt-auto">
                               <button
                                 onClick={() => finalizeCardSelect(selectedCandidate)}
                                 disabled={isGenerating}
-                                className="flex-1 py-4 btn-primary rounded-full text-[10px] tracking-widest uppercase shadow-xl active:scale-95 font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                className="flex-1 py-4 btn-primary rounded-full text-[10px] tracking-widest uppercase shadow-xl active:scale-95 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                {isGenerating && <Sparkles size={12} className="animate-spin" />}
-                                {isGenerating
-                                  ? (language === Language.ZH_TW ? '解讀星辰中...' : 'READING STARS...')
-                                  : (language === Language.ZH_TW ? '確認' : 'CONFIRM')
-                                }
+                                {language === Language.ZH_TW ? '確認' : 'CONFIRM'}
                               </button>
                               <button
                                 onClick={() => setSelectedCandidate(null)}
@@ -810,23 +823,31 @@ const App: React.FC = () => {
                     );
                   }
                   return (
-                    <div className="w-full h-full overflow-y-auto no-scrollbar">
-                      <div className="min-h-full flex flex-col items-center justify-center px-6 text-center pt-24 pb-12">
-                        <div className="min-h-[120px] max-w-2xl glass-panel p-10 flex items-center justify-center mb-8 rounded-[40px] border border-white/10 shadow-glass">
+                    <div className="w-full h-full overflow-hidden">
+                      <div className="h-full flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-1000">
+                        <div className="mb-12">
+                          <CustomLoader />
+                        </div>
+                        <div className="w-full max-w-2xl glass-panel p-8 md:p-12 rounded-[40px] border border-white/10 shadow-glass relative">
+                          <div className="absolute -top-4 -left-4 w-12 h-12 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
+                          <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-accent/20 rounded-full blur-xl animate-pulse"></div>
+
                           <Typewriter
                             text={reading.flavorText || t.loadingFlavor}
-                            className="text-xl md:text-2xl text-gray-200 font-medium leading-loose"
+                            className="text-xl md:text-3xl text-white font-serif italic leading-relaxed md:leading-loose text-center drop-shadow-sm font-lora"
                             onComplete={() => {
                               console.log('⏱️ [TYPEWRITER] Animation complete, reading exists:', !!reading);
-                              console.log('⏱️ [TYPEWRITER] Transitioning to READING stage in 500ms...');
+                              console.log('⏱️ [TYPEWRITER] Transitioning to READING stage in 1500ms...');
                               setTimeout(() => {
                                 console.log('⏱️ [TYPEWRITER] Setting stage to READING now');
                                 setStage(AppStage.READING);
-                              }, 500);
+                              }, 1500);
                             }}
                           />
                         </div>
-                        <CustomLoader />
+                        <p className="mt-8 text-white/30 text-[10px] uppercase tracking-[0.5em] animate-pulse font-bold">
+                          {language === Language.ZH_TW ? '星辰正在低語' : 'THE STARS ARE WHISPERING'}
+                        </p>
                       </div>
                     </div>
                   );

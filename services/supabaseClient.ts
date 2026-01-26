@@ -1,10 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase environment variables. Please check your .env file.');
+// Check for placeholder values to warn the user
+if (supabaseUrl.includes('placeholder') || supabaseAnonKey.includes('placeholder')) {
+    console.warn('⚠️ Supabase environment variables are using placeholders. Authentication will not work.');
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+// Export the real Supabase client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

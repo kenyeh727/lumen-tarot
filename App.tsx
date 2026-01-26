@@ -56,16 +56,9 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener('resize', handleResize);
-    console.warn("🔥 [VERIFICATION] App Code Updated!");
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // DEBUG LOGGING FOR SHUFFLE VERIFICATION
-  if (shuffledDeck.length > 0) {
-    console.warn("🎨 [RENDER] shuffledDeck[0]:", shuffledDeck[0]?.name, "ID:", shuffledDeck[0]?.id);
-  } else {
-    console.log("🎨 [RENDER] shuffledDeck is EMPTY");
-  }
 
   useEffect(() => {
     console.log("App State:", { stage, user: user?.id, loading, profile: !!profile });
@@ -128,7 +121,6 @@ const App: React.FC = () => {
     // This ensures true randomness on every single draw
     const newDeck = shuffleArray([...activeDeckData]);
     setShuffledDeck(newDeck);
-    console.warn("🎲 [REALTIME] FRESH SHUFFLE TRIGGERED. First Card ID:", newDeck[0].id);
 
     // Move to Shuffling Phase FIRST
     setStage(AppStage.SHUFFLING);
@@ -667,20 +659,13 @@ const App: React.FC = () => {
                       </div>
 
                       <div className="flex-grow relative w-full flex items-center justify-center">
-                        {(() => {
-                          console.warn("🎨 [DRAWING-RENDER] Passing this card to FanSpread:", shuffledDeck[0]?.name);
-                          // CRITICAL: Ensure `key` forces remount of FanSpread component when first card changes
-                          // And ensure `cards` prop receives the `shuffledDeck`.
-                          return (
-                            <FanSpread
-                              key={`fan-${shuffledDeck[0]?.id}-${Date.now()}`}
-                              cards={shuffledDeck}
-                              config={activeConfig}
-                              onSelect={(card) => { setSelectedCandidate(card); playSound('select'); }}
-                              selectedCardIds={selectedCards.map(s => s.card.id)}
-                            />
-                          );
-                        })()}
+                        <FanSpread
+                          key={`fan-${shuffledDeck[0]?.id}`}
+                          cards={shuffledDeck}
+                          config={activeConfig}
+                          onSelect={(card) => { setSelectedCandidate(card); playSound('select'); }}
+                          selectedCardIds={selectedCards.map(s => s.card.id)}
+                        />
                       </div>
 
                       <div className="flex-none flex flex-col items-center gap-6 z-40 mt-4 absolute bottom-24 left-0 w-full pointer-events-none">

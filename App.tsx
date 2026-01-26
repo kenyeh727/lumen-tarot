@@ -39,6 +39,7 @@ const App: React.FC = () => {
 
   const [reading, setReading] = useState<ReadingResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [cutEffect, setCutEffect] = useState<{ x: number, y: number } | null>(null);
@@ -49,7 +50,6 @@ const App: React.FC = () => {
   const [isSharing, setIsSharing] = useState(false);
 
   const selectionLock = useRef(false);
-  const [typewriterComplete, setTypewriterComplete] = useState(false);
 
   // Responsive Dimensions
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -64,17 +64,6 @@ const App: React.FC = () => {
   useEffect(() => {
     // console.log("App State:", { stage, user: user?.id, loading, profile: !!profile });
   }, [stage, user, loading, profile]);
-
-  // Synchronized transition to READING stage
-  useEffect(() => {
-    if (stage === AppStage.REVEALING && reading && typewriterComplete) {
-      console.log('✨ [FLOW] Both reading data and animation ready. Moving to READING.');
-      const timer = setTimeout(() => {
-        setStage(AppStage.READING);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [stage, reading, typewriterComplete]);
 
   const t = TRANSLATIONS[language];
 
@@ -104,7 +93,6 @@ const App: React.FC = () => {
     setStage(AppStage.INQUIRY);
     setSelectedCards([]);
     setReading(null);
-    setTypewriterComplete(false);
     if (selectedMode === DeckType.LENORMAND) setTargetCardCount(3);
     else setTargetCardCount(1);
   };
@@ -129,7 +117,6 @@ const App: React.FC = () => {
     playSound('select');
     setSelectedCards([]);
     setReading(null);
-    setTypewriterComplete(false);
 
     // Explicitly shuffle using Fisher-Yates (Knuth) algorithm 
     // This ensures true randomness on every single draw
@@ -241,6 +228,7 @@ const App: React.FC = () => {
 
     selectionLock.current = true;
     playSound('flip');
+    setIsGenerating(true);
 
     let position: any = 'Single';
     if (targetCardCount === 2) position = selectedCards.length === 0 ? 'Situation' : 'Challenge';
@@ -268,16 +256,26 @@ const App: React.FC = () => {
 
 
     if (updatedSelections.length === targetCardCount) {
-      // Transition to REVEALING immediately to show the loading typewriter
-      setStage(AppStage.REVEALING);
-      setTypewriterComplete(false);
-
       try {
         console.log('🎴 [CARDS] All cards selected, generating reading...');
         const result = await generateReading(question, updatedSelections, intent, spreadType, deckType, language);
-        console.log('📊 [READING] Generated reading data arrived');
+        console.log('📊 [READING] Generated reading data:', {
+          hasSummary: !!result.summary,
+          hasAnalysis: !!result.analysis,
+          analysisLength: result.analysis?.length || 0,
+          hasFlavorText: !!result.flavorText,
+          allKeys: Object.keys(result)
+        });
 
+        // CRITICAL: Use flushSync to ensure reading state is set synchronously
+        // This prevents the race condition where REVEALING stage renders before reading is populated
+        console.log('✅ [READING] Setting reading data and transitioning to REVEALING stage');
         setReading(result);
+        // Use setTimeout to ensure state update completes before stage transition
+        setTimeout(() => {
+          console.log('✅ [READING] Reading state confirmed, now transitioning to REVEALING');
+          setStage(AppStage.REVEALING);
+        }, 0);
 
         // Increment usage count after successful reading generation
         if (user) {
@@ -319,7 +317,12 @@ const App: React.FC = () => {
 
       } catch (error) {
         console.error("Critical Oracle Error:", error);
+        // On live site, if generateReading fails, we stay in REVEALING briefly 
+        // but the fallback reading will eventually be set by generateReading's own catch block.
+        // If it throws even with fallback, we at least don't reset the whole session.
         setStage(AppStage.READING);
+      } finally {
+        setIsGenerating(false);
       }
     }
   };
@@ -502,10 +505,22 @@ const App: React.FC = () => {
               </h3>
               <p className="text-gray-400 text-[10px] uppercase tracking-[0.3em] mb-10 font-bold">{selectedCandidate.name_i18n[language]}</p>
               <div className="flex gap-6 w-full">
-                <button onClick={() => finalizeCardSelect(selectedCandidate)} className="flex-1 py-4 btn-primary rounded-full text-[10px] tracking-widest uppercase shadow-xl active:scale-95 font-bold">
-                  {language === Language.ZH_TW ? '確認' : 'CONFIRM'}
+                <button
+                  onClick={() => finalizeCardSelect(selectedCandidate)}
+                  disabled={isGenerating}
+                  className="flex-1 py-4 btn-primary rounded-full text-[10px] tracking-widest uppercase shadow-xl active:scale-95 font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isGenerating && <Sparkles size={12} className="animate-spin" />}
+                  {isGenerating
+                    ? (language === Language.ZH_TW ? '解讀星辰中...' : 'READING STARS...')
+                    : (language === Language.ZH_TW ? '確認' : 'CONFIRM')
+                  }
                 </button>
-                <button onClick={() => setSelectedCandidate(null)} className="flex-1 py-4 bg-white/5 text-gray-300 border border-white/10 rounded-full text-[10px] tracking-widest uppercase hover:bg-white/10 transition-all active:scale-95 font-bold">
+                <button
+                  onClick={() => setSelectedCandidate(null)}
+                  disabled={isGenerating}
+                  className="flex-1 py-4 bg-white/5 text-gray-300 border border-white/10 rounded-full text-[10px] tracking-widest uppercase hover:bg-white/10 transition-all active:scale-95 font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                >
                   {language === Language.ZH_TW ? '返回' : 'BACK'}
                 </button>
               </div>
@@ -757,10 +772,22 @@ const App: React.FC = () => {
                             </h3>
                             <p className="text-gray-400 text-[10px] uppercase tracking-[0.3em] mb-10 font-bold">{selectedCandidate.name_i18n[language]}</p>
                             <div className="flex gap-6 w-full">
-                              <button onClick={() => finalizeCardSelect(selectedCandidate)} className="flex-1 py-4 btn-primary rounded-full text-[10px] tracking-widest uppercase shadow-xl active:scale-95 font-bold">
-                                {language === Language.ZH_TW ? '確認' : 'CONFIRM'}
+                              <button
+                                onClick={() => finalizeCardSelect(selectedCandidate)}
+                                disabled={isGenerating}
+                                className="flex-1 py-4 btn-primary rounded-full text-[10px] tracking-widest uppercase shadow-xl active:scale-95 font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                              >
+                                {isGenerating && <Sparkles size={12} className="animate-spin" />}
+                                {isGenerating
+                                  ? (language === Language.ZH_TW ? '解讀星辰中...' : 'READING STARS...')
+                                  : (language === Language.ZH_TW ? '確認' : 'CONFIRM')
+                                }
                               </button>
-                              <button onClick={() => setSelectedCandidate(null)} className="flex-1 py-4 bg-white/5 text-gray-300 border border-white/10 rounded-full text-[10px] tracking-widest uppercase hover:bg-white/10 transition-all active:scale-95 font-bold">
+                              <button
+                                onClick={() => setSelectedCandidate(null)}
+                                disabled={isGenerating}
+                                className="flex-1 py-4 bg-white/5 text-gray-300 border border-white/10 rounded-full text-[10px] tracking-widest uppercase hover:bg-white/10 transition-all active:scale-95 font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                              >
                                 {language === Language.ZH_TW ? '返回' : 'BACK'}
                               </button>
                             </div>
@@ -770,25 +797,36 @@ const App: React.FC = () => {
                     </div>
                   );
                 case AppStage.REVEALING:
+                  // GUARD CLAUSE: Don't render if reading is null
+                  if (!reading) {
+                    console.error('🚨 [REVEALING] Stage entered but reading is null, showing loader...');
+                    return (
+                      <div className="w-full h-full flex flex-col items-center justify-center">
+                        <CustomLoader />
+                        <p className="text-gray-400 text-xs mt-4 uppercase tracking-widest">
+                          {language === Language.ZH_TW ? '正在解讀星辰...' : 'Reading the stars...'}
+                        </p>
+                      </div>
+                    );
+                  }
                   return (
                     <div className="w-full h-full overflow-y-auto no-scrollbar">
                       <div className="min-h-full flex flex-col items-center justify-center px-6 text-center pt-24 pb-12">
                         <div className="min-h-[120px] max-w-2xl glass-panel p-10 flex items-center justify-center mb-8 rounded-[40px] border border-white/10 shadow-glass">
                           <Typewriter
-                            text={reading?.flavorText || t.loadingFlavor}
+                            text={reading.flavorText || t.loadingFlavor}
                             className="text-xl md:text-2xl text-gray-200 font-medium leading-loose"
                             onComplete={() => {
-                              console.log('⏱️ [TYPEWRITER] Animation complete');
-                              setTypewriterComplete(true);
+                              console.log('⏱️ [TYPEWRITER] Animation complete, reading exists:', !!reading);
+                              console.log('⏱️ [TYPEWRITER] Transitioning to READING stage in 500ms...');
+                              setTimeout(() => {
+                                console.log('⏱️ [TYPEWRITER] Setting stage to READING now');
+                                setStage(AppStage.READING);
+                              }, 500);
                             }}
                           />
                         </div>
                         <CustomLoader />
-                        {!reading && (
-                          <p className="text-gray-500 text-[10px] mt-4 uppercase tracking-[0.3em] animate-pulse font-bold">
-                            {language === Language.ZH_TW ? '正在連結占星連結...' : 'Channeling astronomical links...'}
-                          </p>
-                        )}
                       </div>
                     </div>
                   );

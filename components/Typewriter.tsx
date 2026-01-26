@@ -12,6 +12,12 @@ const Typewriter: React.FC<TypewriterProps> = ({ text, speed = 30, onComplete, c
   const completedRef = useRef(false);
   const textRef = useRef('');
 
+  // Guard clause: if text is null/undefined/empty, don't render anything
+  if (!text) {
+    console.warn('[TYPEWRITER] Received null or empty text, rendering nothing');
+    return null;
+  }
+
   useEffect(() => {
     // Prevent reset if text hasn't changed substantially
     if (text === textRef.current) return;

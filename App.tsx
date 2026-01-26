@@ -265,11 +265,15 @@ const App: React.FC = () => {
           allKeys: Object.keys(result)
         });
 
-        // CRITICAL: Set reading data FIRST, then transition to REVEALING
-        // This ensures the Typewriter has data when it renders
+        // CRITICAL: Use flushSync to ensure reading state is set synchronously
+        // This prevents the race condition where REVEALING stage renders before reading is populated
+        console.log('✅ [READING] Setting reading data and transitioning to REVEALING stage');
         setReading(result);
-        console.log('✅ [READING] Reading data set, transitioning to REVEALING stage');
-        setStage(AppStage.REVEALING);
+        // Use setTimeout to ensure state update completes before stage transition
+        setTimeout(() => {
+          console.log('✅ [READING] Reading state confirmed, now transitioning to REVEALING');
+          setStage(AppStage.REVEALING);
+        }, 0);
 
         // Increment usage count after successful reading generation
         if (user) {
@@ -765,22 +769,34 @@ const App: React.FC = () => {
                     </div>
                   );
                 case AppStage.REVEALING:
+                  // GUARD CLAUSE: Don't render if reading is null
+                  if (!reading) {
+                    console.error('🚨 [REVEALING] Stage entered but reading is null, showing loader...');
+                    return (
+                      <div className="w-full h-full flex flex-col items-center justify-center">
+                        <CustomLoader />
+                        <p className="text-gray-400 text-xs mt-4 uppercase tracking-widest">
+                          {language === Language.ZH_TW ? '正在解讀星辰...' : 'Reading the stars...'}
+                        </p>
+                      </div>
+                    );
+                  }
                   return (
                     <div className="w-full h-full overflow-y-auto no-scrollbar">
                       <div className="min-h-full flex flex-col items-center justify-center px-6 text-center pt-24 pb-12">
                         <div className="min-h-[120px] max-w-2xl glass-panel p-10 flex items-center justify-center mb-8 rounded-[40px] border border-white/10 shadow-glass">
-                          <Typewriter text={reading?.flavorText || t.loadingFlavor} className="text-xl md:text-2xl text-gray-200 font-medium leading-loose" onComplete={() => {
-                            console.log('⏱️ [TYPEWRITER] Animation complete, reading exists:', !!reading);
-                            if (reading) {
+                          <Typewriter 
+                            text={reading.flavorText || t.loadingFlavor} 
+                            className="text-xl md:text-2xl text-gray-200 font-medium leading-loose" 
+                            onComplete={() => {
+                              console.log('⏱️ [TYPEWRITER] Animation complete, reading exists:', !!reading);
                               console.log('⏱️ [TYPEWRITER] Transitioning to READING stage in 500ms...');
                               setTimeout(() => {
                                 console.log('⏱️ [TYPEWRITER] Setting stage to READING now');
                                 setStage(AppStage.READING);
                               }, 500);
-                            } else {
-                              console.error('⏱️ [TYPEWRITER] Cannot transition: reading is null');
-                            }
-                          }} />
+                            }} 
+                          />
                         </div>
                         <CustomLoader />
                       </div>

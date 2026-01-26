@@ -140,37 +140,78 @@ const App: React.FC = () => {
   };
 
   const handleShare = async () => {
-    if (!shareCardRef.current || isSharing) return;
+    console.log('🔗 [SHARE] Share button clicked');
+    if (!shareCardRef.current || isSharing) {
+      console.warn('🔗 [SHARE] Blocked: shareCardRef.current=', !!shareCardRef.current, 'isSharing=', isSharing);
+      return;
+    }
     setIsSharing(true);
     playSound('select');
 
     try {
+      console.log('🔗 [SHARE] Starting html2canvas capture...');
       const canvas = await html2canvas(shareCardRef.current, {
         backgroundColor: null,
         scale: 2,
         logging: false,
         useCORS: true
       });
+      console.log('🔗 [SHARE] Canvas created successfully');
 
       canvas.toBlob(async (blob: Blob | null) => {
-        if (!blob) return;
+        if (!blob) {
+          console.error('🔗 [SHARE] Failed to create blob');
+          alert(language === Language.ZH_TW ? '分享失敗，請重試' : 'Share failed, please try again');
+          setIsSharing(false);
+          return;
+        }
+
+        console.log('🔗 [SHARE] Blob created, size:', blob.size);
         const file = new File([blob], `lumen-tarot-${Date.now()}.png`, { type: 'image/png' });
 
-        if (navigator.share) {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
+            console.log('🔗 [SHARE] Using native share API...');
             await navigator.share({
               files: [file],
               title: 'Lumen Tarot Reading',
               text: `My reading for today: "${reading?.summary}" #LumenTarot`
             });
-          } catch (err) {
-            console.log('Share cancelled or failed', err);
+            console.log('🔗 [SHARE] Share completed successfully');
+            alert(language === Language.ZH_TW ? '✨ 分享成功！' : '✨ Shared successfully!');
+          } catch (err: any) {
+            if (err.name !== 'AbortError') {
+              console.error('🔗 [SHARE] Native share failed:', err);
+              // Fallback to download
+              const link = document.createElement('a');
+              link.download = `lumen-tarot-${Date.now()}.png`;
+              link.href = canvas.toDataURL();
+              link.click();
+              alert(language === Language.ZH_TW ? '📥 圖片已下載' : '📥 Image downloaded');
+            } else {
+              console.log('🔗 [SHARE] User cancelled share');
+            }
           }
         } else {
-          const link = document.createElement('a');
-          link.download = `lumen-tarot-${Date.now()}.png`;
-          link.href = canvas.toDataURL();
-          link.click();
+          // Desktop fallback: try clipboard first, then download
+          console.log('🔗 [SHARE] Native share not available, using fallback...');
+          try {
+            if (navigator.clipboard && window.ClipboardItem) {
+              const clipboardItem = new ClipboardItem({ 'image/png': blob });
+              await navigator.clipboard.write([clipboardItem]);
+              console.log('🔗 [SHARE] Image copied to clipboard');
+              alert(language === Language.ZH_TW ? '📋 圖片已複製到剪貼簿！' : '📋 Image copied to clipboard!');
+            } else {
+              throw new Error('Clipboard API not available');
+            }
+          } catch (clipErr) {
+            console.log('🔗 [SHARE] Clipboard failed, downloading instead:', clipErr);
+            const link = document.createElement('a');
+            link.download = `lumen-tarot-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            alert(language === Language.ZH_TW ? '📥 圖片已下載到您的裝置' : '📥 Image downloaded to your device');
+          }
         }
         setIsSharing(false);
       }, 'image/png');
@@ -215,6 +256,13 @@ const App: React.FC = () => {
       setStage(AppStage.REVEALING);
       try {
         const result = await generateReading(question, updatedSelections, intent, spreadType, deckType, language);
+        console.log('📊 [READING] Generated reading data:', {
+          hasSummary: !!result.summary,
+          hasAnalysis: !!result.analysis,
+          analysisLength: result.analysis?.length || 0,
+          hasFlavorText: !!result.flavorText,
+          allKeys: Object.keys(result)
+        });
         setReading(result);
 
         // Increment usage count after successful reading generation
@@ -283,7 +331,15 @@ const App: React.FC = () => {
   // --- RENDER STAGES ---
 
   const renderReadingStage = () => {
-    if (!reading) return null;
+    if (!reading) {
+      console.warn('📄 [RENDER] renderReadingStage called but reading is null');
+      return null;
+    }
+    console.log('📄 [RENDER] Rendering full reading stage with data:', {
+      summary: reading.summary?.substring(0, 50) + '...',
+      analysisLength: reading.analysis?.length || 0,
+      hasAllFields: !!(reading.summary && reading.analysis && reading.advice && reading.affirmation)
+    });
     return (
       <div className="w-full h-full flex flex-col pt-20 pb-safe z-30">
         <div className="absolute top-0 left-[-9999px] pointer-events-none">
@@ -707,7 +763,18 @@ const App: React.FC = () => {
                     <div className="w-full h-full overflow-y-auto no-scrollbar">
                       <div className="min-h-full flex flex-col items-center justify-center px-6 text-center pt-24 pb-12">
                         <div className="min-h-[120px] max-w-2xl glass-panel p-10 flex items-center justify-center mb-8 rounded-[40px] border border-white/10 shadow-glass">
-                          <Typewriter text={reading?.flavorText || t.loadingFlavor} className="text-xl md:text-2xl text-gray-200 font-medium leading-loose" onComplete={() => { if (reading) setTimeout(() => setStage(AppStage.READING), 1000); }} />
+                          <Typewriter text={reading?.flavorText || t.loadingFlavor} className="text-xl md:text-2xl text-gray-200 font-medium leading-loose" onComplete={() => {
+                            console.log('⏱️ [TYPEWRITER] Animation complete, reading exists:', !!reading);
+                            if (reading) {
+                              console.log('⏱️ [TYPEWRITER] Transitioning to READING stage in 500ms...');
+                              setTimeout(() => {
+                                console.log('⏱️ [TYPEWRITER] Setting stage to READING now');
+                                setStage(AppStage.READING);
+                              }, 500);
+                            } else {
+                              console.error('⏱️ [TYPEWRITER] Cannot transition: reading is null');
+                            }
+                          }} />
                         </div>
                         <CustomLoader />
                       </div>

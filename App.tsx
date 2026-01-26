@@ -61,7 +61,7 @@ const App: React.FC = () => {
 
 
   useEffect(() => {
-    console.log("App State:", { stage, user: user?.id, loading, profile: !!profile });
+    // console.log("App State:", { stage, user: user?.id, loading, profile: !!profile });
   }, [stage, user, loading, profile]);
 
   const t = TRANSLATIONS[language];

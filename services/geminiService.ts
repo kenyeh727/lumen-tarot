@@ -71,8 +71,6 @@ const getApiKey = () => {
   const key = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY || process.env.GEMINI_API_KEY || '';
   if (!key) {
     console.error("[Gemini] API Key is MISSING! Check Cloudflare environment variables.");
-  } else {
-    console.log(`[Gemini] API Key found (len: ${key.length}): ${key.substring(0, 4)}...${key.substring(key.length - 4)}`);
   }
   return key;
 };

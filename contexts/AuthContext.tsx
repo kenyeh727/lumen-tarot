@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
-import { getUserProfile, signInWithGoogle, signOut, UserProfile } from '../services/authService';
+import { getUserProfile, signInWithGoogle, signInWithEmail, signOut, UserProfile } from '../services/authService';
 
 interface AuthContextType {
     user: User | null;
     profile: UserProfile | null;
     loading: boolean;
     login: () => Promise<void>;
+    loginWithEmail: (email: string) => Promise<void>;
     logout: () => Promise<void>;
     refreshProfile: () => Promise<void>;
 }
@@ -91,6 +92,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const loginWithEmail = async (email: string) => {
+        try {
+            await signInWithEmail(email);
+        } catch (error) {
+            console.error('Email login error:', error);
+            throw error;
+        }
+    };
+
     const logout = async () => {
         try {
             await signOut();
@@ -103,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, profile, loading, login, logout, refreshProfile }}>
+        <AuthContext.Provider value={{ user, profile, loading, login, loginWithEmail, logout, refreshProfile }}>
             {children}
         </AuthContext.Provider>
     );

@@ -24,6 +24,18 @@ export const signInWithGoogle = async () => {
     return data;
 };
 
+export const signInWithEmail = async (email: string) => {
+    const { data, error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+            emailRedirectTo: window.location.origin,
+        },
+    });
+
+    if (error) throw error;
+    return data;
+};
+
 export const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -43,8 +55,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
             .single();
 
         if (error) {
-            // Treat connection errors or "Not Found" as a fresh user state (null profile)
-            // PGRST116: JSON object requested, multiple (or no) rows returned
             if (error.code !== 'PGRST116') {
                 console.warn('Supabase fetch error (handled as new user):', error.message);
             }
@@ -53,14 +63,12 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 
         return data as UserProfile;
     } catch (e) {
-        // Network failures or other crashes should not block the user
         console.error('Critical Profile Fetch Error (handled as new user):', e);
         return null;
     }
 };
 
 export const incrementUsageCount = async (userId: string): Promise<boolean> => {
-    // First, get current profile
     const profile = await getUserProfile(userId);
 
     if (!profile) {
@@ -68,7 +76,6 @@ export const incrementUsageCount = async (userId: string): Promise<boolean> => {
         return false;
     }
 
-    // Unlimited users don't need to increment usage count
     if (profile.is_unlimited) {
         return true;
     }
@@ -96,7 +103,6 @@ export const incrementUsageCount = async (userId: string): Promise<boolean> => {
 export const checkUsageLimit = async (userId: string): Promise<{ canUse: boolean; remaining: number; isUnlimited: boolean }> => {
     const profile = await getUserProfile(userId);
 
-    // If profile doesn't exist yet, it's a new user, allow use
     if (!profile) {
         return { canUse: true, remaining: USAGE_LIMIT, isUnlimited: false };
     }

@@ -107,6 +107,8 @@ const ReadingPage: React.FC = () => {
     };
 
     const highlightKeywords = (text: string) => {
+        if (!text) return <span></span>;
+
         const keywords = ['Love', 'Career', 'Health', 'Future', 'Past', 'Present', 'Opportunity', 'Change', 'Growth', 'Success', 'Harmony', 'Balance', 'Joy', 'Hope', 'Universe', 'Spirit'];
         let parts = text.split(new RegExp(`(${keywords.join('|')})`, 'gi'));
         return (

@@ -33,3 +33,13 @@ dist-ssr
 # Vite
 # typescript
 *.tsbuildinfo
+
+# Cloudflare Wrangler local cache
+.wrangler
+
+# Build output
+dist
+dist-ssr
+
+# macOS
+.DS_Store

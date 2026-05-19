@@ -1,8 +1,0 @@
-
-{
-  "name": "Lumen Tarot",
-  "description": "An immersive, single-page tarot reading experience featuring a fisheye card selection interface, AI-driven interpretations, and generative ambient audio.",
-  "requestFramePermissions": [
-    "camera"
-  ]
-}

@@ -20,15 +20,20 @@ export default {
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",
                 ring: "hsl(var(--ring))",
-                background: "hsl(var(--background))",
+                background: "#08090c",
                 foreground: "hsl(var(--foreground))",
+                surface: "#1c1d22",
                 primary: {
-                    DEFAULT: "hsl(var(--primary))",
+                    DEFAULT: "#6751F6",
                     foreground: "hsl(var(--primary-foreground))",
                 },
                 secondary: {
-                    DEFAULT: "hsl(var(--secondary))",
+                    DEFAULT: "#9d6eba",
                     foreground: "hsl(var(--secondary-foreground))",
+                },
+                accent: {
+                    DEFAULT: "#F6DC54",
+                    foreground: "hsl(var(--accent-foreground))",
                 },
                 destructive: {
                     DEFAULT: "hsl(var(--destructive))",
@@ -38,10 +43,6 @@ export default {
                     DEFAULT: "hsl(var(--muted))",
                     foreground: "hsl(var(--muted-foreground))",
                 },
-                accent: {
-                    DEFAULT: "hsl(var(--accent))",
-                    foreground: "hsl(var(--accent-foreground))",
-                },
                 popover: {
                     DEFAULT: "hsl(var(--popover))",
                     foreground: "hsl(var(--popover-foreground))",
@@ -50,6 +51,8 @@ export default {
                     DEFAULT: "hsl(var(--card))",
                     foreground: "hsl(var(--card-foreground))",
                 },
+                'quin-bg': '#EAE8FA',
+                'quin-dark': '#222337',
             },
             borderRadius: {
                 lg: "var(--radius)",

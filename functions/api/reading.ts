@@ -83,7 +83,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         }
 
         console.error("Gemini API Error:", JSON.stringify(data));
-        return new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json" } });
+        const status = response.status && response.status !== 200 ? response.status : 500;
+        return new Response(JSON.stringify(data), { 
+            status: status,
+            headers: { "Content-Type": "application/json" } 
+        });
 
     } catch (err: any) {
         console.error("Worker Error:", err.message, err.stack);

@@ -151,9 +151,30 @@ const Spread: React.FC = () => {
                 setSelectedCandidate(null);
 
                 // Optional: Show error toast/alert to user here
-                alert('Connection to the stars interrupted. Please try again.');
-
-                navigate('/'); // Fallback
+                let errorMsg = language === Language.ZH_TW 
+                    ? '星辰連結中斷，請重試。' 
+                    : 'Connection to the stars interrupted. Please try again.';
+                
+                if (error && error.message) {
+                    try {
+                        // Extract JSON payload from error message if exists
+                        const jsonStart = error.message.indexOf('{');
+                        if (jsonStart !== -1) {
+                            const parsed = JSON.parse(error.message.substring(jsonStart));
+                            if (parsed.error) {
+                                errorMsg = typeof parsed.error === 'string' 
+                                    ? parsed.error 
+                                    : (parsed.error.message || JSON.stringify(parsed.error));
+                            }
+                        } else {
+                            errorMsg = error.message;
+                        }
+                    } catch (e) {
+                        errorMsg = error.message;
+                    }
+                }
+                alert(errorMsg);
+                navigate('/');
             } finally {
                 // Ensure generating is off if we haven't navigated away (though navigate should unmount)
                 // Note: If navigate happens, component unmounts, this might run on unmounted component 

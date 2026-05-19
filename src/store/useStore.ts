@@ -83,7 +83,14 @@ export const useAppStore = create<AppState>()(
         }),
         {
             name: 'oracle-storage',
-            partialize: (state) => ({ language: state.language, history: state.history }),
+            partialize: (state) => ({
+                language: state.language,
+                history: state.history,
+                reading: state.reading,
+                selectedCards: state.selectedCards,
+                deckType: state.deckType,
+                spreadType: state.spreadType,
+            }),
         }
     )
 );

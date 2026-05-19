@@ -78,7 +78,7 @@ const App: React.FC = () => {
         <Route path="/library" element={<Library />} />
         <Route path="/inquiry/:deckType" element={user ? <Inquiry /> : <Navigate to="/login" state={{ from: location }} />} />
         <Route path="/spread/:deckType" element={user ? <Spread /> : <Navigate to="/login" state={{ from: location }} />} />
-        <Route path="/reading" element={user ? <Reading /> : <Navigate to="/login" state={{ from: location }} />} />
+        <Route path="/reading" element={<Reading />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/payment/return" element={user ? <PaymentReturn /> : <Navigate to="/login" />} />
         <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" />} />

@@ -15,8 +15,11 @@ import { Screenshot } from '@capawesome/capacitor-screenshot';
 // @ts-ignore
 import html2canvas from 'html2canvas';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const ReadingPage: React.FC = () => {
     const navigate = useNavigate();
+    const { loading: authLoading } = useAuth();
     const {
         language, reading, selectedCards, deckType,
         setSelectedCards, resetReadingState, history
@@ -27,6 +30,15 @@ const ReadingPage: React.FC = () => {
 
     const activeConfig = DECK_CONFIGS[deckType];
     const t = TRANSLATIONS[language];
+
+    // Auth is still booting — wait before giving up
+    if (!reading && authLoading) {
+        return (
+            <div className="w-full h-full flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     if (!reading) {
         return (

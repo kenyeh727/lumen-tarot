@@ -22,7 +22,40 @@
       };
     })();
   </script>
-
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            serif: ['Lora', 'serif'],
+          },
+          colors: {
+            background: '#08090c',
+            surface: '#1c1d22',
+            primary: '#6751F6',
+            secondary: '#9d6eba',
+            accent: '#F6DC54',
+            'quin-bg': '#EAE8FA',
+            'quin-dark': '#222337'
+          },
+          backgroundImage: {
+            'quin-gradient': 'linear-gradient(180deg, #F8F0FF 0%, #EAE8FA 100%)',
+            'quin-gradient-dark': 'linear-gradient(180deg, #201d3d 0%, #1f1c3b 100%)',
+            'glass': 'linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%)',
+            'glass-dark': 'linear-gradient(180deg, rgba(34, 35, 55, 0.7) 0%, rgba(34, 35, 55, 0.4) 100%)'
+          },
+          boxShadow: {
+            'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+            'glass-hover': '0 12px 48px 0 rgba(103, 81, 246, 0.25)',
+            'quin': '0 203px 57px 0 rgba(31,14,52,0), 0 130px 52px 0 rgba(31,14,52,0.03), 0 73px 44px 0 rgba(31,14,52,0.1)'
+          }
+        }
+      }
+    }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link

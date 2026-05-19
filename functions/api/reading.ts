@@ -5,7 +5,8 @@ interface Env {
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
     const { request, env } = context;
-    const apiKey = env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY;
+    const rawApiKey = env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY;
+    const apiKey = rawApiKey ? rawApiKey.trim() : undefined;
 
     if (!apiKey) {
         console.error("Missing API Key");
